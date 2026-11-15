@@ -1,0 +1,16 @@
+{
+  "name": "ebeba",
+  "private": true,
+  "description": "eBeba – digital newborn registration (bootcamp sprint project). Root tools only: run the app from server/ and client/.",
+  "engines": {
+    "node": ">=22.22.0"
+  },
+  "scripts": {
+    "ai-context": "node tools/ai-context.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.10.1"
+  }
+}

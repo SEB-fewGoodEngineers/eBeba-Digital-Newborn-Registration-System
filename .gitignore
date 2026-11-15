@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+.env
+*.local
+*.log
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+# package-lock.json is committed on purpose: everyone installs the same versions
+
+# AI context files (built by npm run ai-context)
+ai-context/
