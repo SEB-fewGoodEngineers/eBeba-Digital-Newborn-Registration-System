@@ -94,3 +94,5 @@ A PR can only be merged when both are green.
 
 - **Server → Render.** Root directory `server`, build `npm install`, start `npm start`. Set `MONGODB_URI`, `JWT_SECRET` and `CLIENT_ORIGINS` (the Vercel URL).
 - **Client → Vercel.** Root directory `client`, framework Vite. Set `VITE_BACK_END_SERVER_URL` (the Render URL). `vercel.json` makes page refreshes work on every route.
+
+Testing PR!
