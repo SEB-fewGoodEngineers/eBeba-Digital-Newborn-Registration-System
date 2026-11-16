@@ -87,9 +87,14 @@ export default function CswCasesPage() {
                     >
                       <ListItemText
                         primary={
-                          <Stack direction="row" alignItems="center" spacing={1}>
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={1}
+                          >
                             <Typography variant="subtitle1">
-                              {baby.firstName || "Proposed Name"} {baby.lastName || ""}
+                              {baby.firstName || "Proposed Name"}{" "}
+                              {baby.lastName || ""}
                             </Typography>
                             {baby.jmbg && <DemoBadge />}
                           </Stack>
@@ -131,7 +136,10 @@ export default function CswCasesPage() {
                 <Typography variant="body2">
                   Last Name: {selectedCase.babyId?.lastName || "N/A"}
                 </Typography>
-                <Typography variant="body2" sx={{ display: "flex", alignItems: "center", my: 0.5 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ display: "flex", alignItems: "center", my: 0.5 }}
+                >
                   JMBG: {selectedCase.babyId?.jmbg || "Pending"}
                   {selectedCase.babyId?.jmbg && <DemoBadge />}
                 </Typography>
@@ -145,17 +153,23 @@ export default function CswCasesPage() {
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="subtitle2">Parents Information</Typography>
                 <Typography variant="body2">
-                  Mother: {selectedCase.babyId?.mother?.firstName} {selectedCase.babyId?.mother?.lastName} ({selectedCase.babyId?.mother?.email})
+                  Mother: {selectedCase.babyId?.mother?.firstName}{" "}
+                  {selectedCase.babyId?.mother?.lastName} (
+                  {selectedCase.babyId?.mother?.email})
                 </Typography>
                 {selectedCase.babyId?.father?.firstName && (
                   <Typography variant="body2">
-                    Father: {selectedCase.babyId?.father?.firstName} {selectedCase.babyId?.father?.lastName}
+                    Father: {selectedCase.babyId?.father?.firstName}{" "}
+                    {selectedCase.babyId?.father?.lastName}
                   </Typography>
                 )}
               </CardContent>
             </Card>
           ) : (
-            <Card variant="outlined" sx={{ p: 4, textAlign: "center", bgcolor: "action.hover" }}>
+            <Card
+              variant="outlined"
+              sx={{ p: 4, textAlign: "center", bgcolor: "action.hover" }}
+            >
               <Typography color="text.secondary">
                 Select a case from the list to view baby and parent details.
               </Typography>

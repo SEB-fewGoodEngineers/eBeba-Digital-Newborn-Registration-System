@@ -9,6 +9,7 @@ const authRouter = require("./controllers/auth");
 const userRouter = require("./controllers/users");
 const babiesRouter = require("./controllers/babies");
 const diaryEntriesRouter = require("./controllers/diaryEntries");
+const growthMeasurementsRouter = require("./controllers/growthMeasurements");
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/babies", babiesRouter);
 app.use("/babies/:babyId/diary-entries", diaryEntriesRouter);
+app.use("/babies/:babyId/growth-measurements", growthMeasurementsRouter);
 
 // Unknown route
 app.use((req, res) => {

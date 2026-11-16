@@ -17,17 +17,18 @@ router.get(
   asyncHandler(async (req, res) => {
     // CSW službenik vidi samo slučajeve koji pripadaju njegovoj instituciji
     const query = { cswInstitutionId: req.user.institutionId };
-    
+
     const cases = await CswCase.find(query)
       .sort({ createdAt: -1 }) // najnoviji prvi
       .populate({
         path: "babyId",
-        select: "firstName lastName jmbg gender birthDateTime municipalityOfBirth mother father",
+        select:
+          "firstName lastName jmbg gender birthDateTime municipalityOfBirth mother father",
       })
       .lean();
 
     res.status(200).json(cases);
-  })
+  }),
 );
 
 // GET SINGLE CSW CASE DETAILS
@@ -51,7 +52,7 @@ router.get(
     }
 
     res.status(200).json(cswCase);
-  })
+  }),
 );
 
 module.exports = router;
