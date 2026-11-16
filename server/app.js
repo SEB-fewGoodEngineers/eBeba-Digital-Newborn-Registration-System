@@ -7,6 +7,9 @@ const mongoSanitize = require("express-mongo-sanitize");
 const errorHandler = require("./middleware/errorHandler");
 const authRouter = require("./controllers/auth");
 const userRouter = require("./controllers/users");
+const cswCasesRouter = require("./controllers/cswCases");
+const aiSuggestionsRouter = require("./controllers/aiSuggestions");
+const insuranceRecordsRouter = require("./controllers/insuranceRecords");
 
 const app = express();
 
@@ -28,8 +31,13 @@ app.get("/", (req, res) => {
   res.json({ status: "ok", app: "eBeba API" });
 });
 
+// Registracija ruti u app.js:
+app.use("/", aiSuggestionsRouter); // Zato što ima prefikse /registrations i /ai-suggestions
+app.use("/insurance-records", insuranceRecordsRouter);
+
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
+app.use("/csw-cases", cswCasesRouter);
 
 // Unknown route
 app.use((req, res) => {

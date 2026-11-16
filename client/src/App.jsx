@@ -7,6 +7,9 @@ import NotFoundPage from "./pages/home/NotFoundPage";
 import SignInPage from "./pages/auth/SignInPage";
 import SignUpPage from "./pages/auth/SignUpPage";
 import { useUser } from "./contexts/UserContext";
+import CswCasesPage from "./pages/csw/CswCasesPage";
+import RequireRole from "./components/RequireRole/RequireRole";
+import { ROLES } from "./constants/labels";
 
 export default function App() {
   const { user, isLoading } = useUser();
@@ -33,6 +36,14 @@ export default function App() {
           <Route
             path="/sign-up"
             element={user ? <Navigate to="/" replace /> : <SignUpPage />}
+          />
+          <Route
+            path="/csw-cases"
+            element={
+              <RequireRole roles={[ROLES.CSW_STAFF]}>
+                <CswCasesPage />
+              </RequireRole>
+            }
           />
 
           {/* Epic pages go here, wrapped in RequireRole (components/RequireRole). Example:
