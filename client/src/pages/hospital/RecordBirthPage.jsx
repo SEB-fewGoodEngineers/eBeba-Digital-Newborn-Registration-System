@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router";
 import {
@@ -83,13 +82,11 @@ export default function RecordBirthPage() {
       };
 
       if (formData.birthWeightGrams !== "") {
-        babyData.birthWeightGrams =
-          Number(formData.birthWeightGrams);
+        babyData.birthWeightGrams = Number(formData.birthWeightGrams);
       }
 
       if (formData.birthLengthCm !== "") {
-        babyData.birthLengthCm =
-          Number(formData.birthLengthCm);
+        babyData.birthLengthCm = Number(formData.birthLengthCm);
       }
 
       if (showFather) {
@@ -107,10 +104,7 @@ export default function RecordBirthPage() {
       setError(err.message);
       setFieldErrors(
         Object.fromEntries(
-          (err.details || []).map((item) => [
-            item.field,
-            item.message,
-          ]),
+          (err.details || []).map((item) => [item.field, item.message]),
         ),
       );
     } finally {
@@ -177,27 +171,19 @@ export default function RecordBirthPage() {
 
         {savedBaby ? (
           <Stack spacing={2}>
-            <Alert severity="success">
-              Birth record created successfully.
-            </Alert>
+            <Alert severity="success">Birth record created successfully.</Alert>
 
-            <Typography>
-              Birth record number:
-            </Typography>
+            <Typography>Birth record number:</Typography>
 
             <Typography variant="h5" fontWeight="bold">
               {savedBaby.birthRecordNumber}
             </Typography>
 
             <Typography>
-              Give this number to the parent so they can link
-              their account.
+              Give this number to the parent so they can link their account.
             </Typography>
 
-            <Button
-              variant="contained"
-              onClick={() => setSavedBaby(null)}
-            >
+            <Button variant="contained" onClick={() => setSavedBaby(null)}>
               Record another birth
             </Button>
 
@@ -208,13 +194,9 @@ export default function RecordBirthPage() {
         ) : (
           <Box component="form" onSubmit={handleSubmit} noValidate>
             <Stack spacing={3}>
-              {error && (
-                <Alert severity="error">{error}</Alert>
-              )}
+              {error && <Alert severity="error">{error}</Alert>}
 
-              <Typography variant="h6">
-                Birth information
-              </Typography>
+              <Typography variant="h6">Birth information</Typography>
 
               <TextField
                 select
@@ -301,39 +283,22 @@ export default function RecordBirthPage() {
                 required
                 fullWidth
               >
-                <MenuItem value="two_parents">
-                  Two parents
-                </MenuItem>
-                <MenuItem value="single_parent">
-                  Single parent
-                </MenuItem>
-                <MenuItem value="unknown_father">
-                  Unknown father
-                </MenuItem>
-                <MenuItem value="legal_guardian">
-                  Legal guardian
-                </MenuItem>
+                <MenuItem value="two_parents">Two parents</MenuItem>
+                <MenuItem value="single_parent">Single parent</MenuItem>
+                <MenuItem value="unknown_father">Unknown father</MenuItem>
+                <MenuItem value="legal_guardian">Legal guardian</MenuItem>
               </TextField>
 
               {parentFields("mother", "Mother's information")}
 
-              {showFather &&
-                parentFields("father", "Father's information")}
+              {showFather && parentFields("father", "Father's information")}
 
               <Stack direction="row" spacing={2}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={isSaving}
-                >
+                <Button type="submit" variant="contained" disabled={isSaving}>
                   {isSaving ? "Saving..." : "Save birth record"}
                 </Button>
 
-                <Button
-                  type="button"
-                  component={Link}
-                  to="/hospital/babies"
-                >
+                <Button type="button" component={Link} to="/hospital/babies">
                   Cancel
                 </Button>
               </Stack>

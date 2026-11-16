@@ -1,4 +1,3 @@
-
 const express = require("express");
 const Baby = require("../models/Baby");
 const Institution = require("../models/Institution");
@@ -20,9 +19,7 @@ router.post(
   requireRole(ROLES.HOSPITAL_STAFF),
   validate(createBabySchema),
   asyncHandler(async (req, res) => {
-    const hospital = await Institution.findById(
-      req.user.institutionId,
-    );
+    const hospital = await Institution.findById(req.user.institutionId);
 
     if (
       !hospital ||
@@ -34,9 +31,7 @@ router.post(
       });
     }
 
-    const birthRecordNumber = await generateNumber(
-      "BR-" + hospital.code,
-    );
+    const birthRecordNumber = await generateNumber("BR-" + hospital.code);
 
     const baby = await Baby.create({
       ...req.body,

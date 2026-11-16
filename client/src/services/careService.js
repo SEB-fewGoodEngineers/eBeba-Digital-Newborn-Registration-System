@@ -10,3 +10,12 @@ export const createDiaryEntry = (babyId, entry) =>
     method: "POST",
     body: entry,
   });
+
+export const getGrowthMeasurements = (babyId) =>
+  api(`/babies/${babyId}/growth-measurements`);
+
+export const createGrowthMeasurement = (babyId, measurement) =>
+  api(`/babies/${babyId}/growth-measurements`, {
+    method: "POST",
+    body: measurement,
+  });

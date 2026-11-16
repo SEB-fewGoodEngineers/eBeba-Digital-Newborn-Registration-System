@@ -1,4 +1,3 @@
-
 const { test } = require("node:test");
 const assert = require("node:assert");
 
@@ -60,9 +59,7 @@ test("rejects an invalid gender", () => {
 test("requires father for two-parent families", () => {
   const { father, ...birthWithoutFather } = validBirth;
 
-  const result = createBabySchema.safeParse(
-    birthWithoutFather,
-  );
+  const result = createBabySchema.safeParse(birthWithoutFather);
 
   assert.strictEqual(result.success, false);
 });

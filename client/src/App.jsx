@@ -53,7 +53,7 @@ export default function App() {
               </RequireRole>
             }
           />
-          
+
           <Route
             path="/hospital/babies"
             element={
