@@ -8,6 +8,8 @@ const errorHandler = require("./middleware/errorHandler");
 const authRouter = require("./controllers/auth");
 const userRouter = require("./controllers/users");
 const babiesRouter = require("./controllers/babies");
+const diaryEntriesRouter = require("./controllers/diaryEntries");
+
 const app = express();
 
 // Render runs the app behind one proxy; needed for correct IPs in the rate limiter
@@ -31,6 +33,8 @@ app.get("/", (req, res) => {
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/babies", babiesRouter);
+app.use("/babies/:babyId/diary-entries", diaryEntriesRouter);
+
 // Unknown route
 app.use((req, res) => {
   res.status(404).json({ err: "Not found." });
