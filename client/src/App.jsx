@@ -17,9 +17,7 @@ import RecordBirthPage from "./pages/hospital/RecordBirthPage";
 // CONTEXT AND CONSTANTS
 import { ROLES } from "./constants/labels";
 import { useUser } from "./contexts/UserContext";
-import RequireRole from "./components/RequireRole/RequireRole";
 import ApplyPage from "./pages/registration/ApplyPage";
-import { ROLES } from "./constants/labels";
 
 export default function App() {
   const { user, isLoading } = useUser();
