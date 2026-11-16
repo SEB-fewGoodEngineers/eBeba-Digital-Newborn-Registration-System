@@ -17,6 +17,7 @@ import RecordBirthPage from "./pages/hospital/RecordBirthPage";
 // CONTEXT AND CONSTANTS
 import { ROLES } from "./constants/labels";
 import { useUser } from "./contexts/UserContext";
+import ApplyPage from "./pages/registration/ApplyPage";
 
 export default function App() {
   const { user, isLoading } = useUser();
@@ -71,6 +72,14 @@ export default function App() {
             }
           />
           <Route path="*" element={<NotFoundPage />} />
+          <Route
+            path="/registration/apply"
+            element={
+              <RequireRole roles={[ROLES.PARENT]}>
+                <ApplyPage />
+              </RequireRole>
+            }
+          />
         </Routes>
       </Box>
     </>
