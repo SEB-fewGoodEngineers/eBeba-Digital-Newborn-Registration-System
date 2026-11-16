@@ -89,7 +89,9 @@ router.patch(
           : "a parent";
       return res
         .status(403)
-        .json({ err: `This record was entered by ${who}. You cannot change it.` });
+        .json({
+          err: `This record was entered by ${who}. You cannot change it.`,
+        });
     }
 
     const before = record.toObject();
