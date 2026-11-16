@@ -1,15 +1,26 @@
 import { Navigate, Route, Routes } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
+// COMPONENTS
+import RequireRole from "./components/RequireRole/RequireRole";
 import NavBar from "./components/NavBar/NavBar";
+
+// PAGES
 import LandingPage from "./pages/home/LandingPage";
 import HomePage from "./pages/home/HomePage";
 import NotFoundPage from "./pages/home/NotFoundPage";
 import SignInPage from "./pages/auth/SignInPage";
 import SignUpPage from "./pages/auth/SignUpPage";
+import CarePage from "./pages/care/CarePage";
+import HospitalBirthListPage from "./pages/hospital/HospitalBirthListPage";
+import RecordBirthPage from "./pages/hospital/RecordBirthPage";
+
+// CONTEXT AND CONSTANTS
+import { ROLES } from "./constants/labels";
 import { useUser } from "./contexts/UserContext";
 import CswCasesPage from "./pages/csw/CswCasesPage";
 import RequireRole from "./components/RequireRole/RequireRole";
 import { ROLES } from "./constants/labels";
+import ApplyPage from "./pages/registration/ApplyPage";
 
 export default function App() {
   const { user, isLoading } = useUser();
@@ -46,12 +57,40 @@ export default function App() {
             }
           />
 
-          {/* Epic pages go here, wrapped in RequireRole (components/RequireRole). Example:
           <Route
-            path="/babies/:babyId/diary"
-            element={<RequireRole roles={[ROLES.PARENT]}><DiaryPage /></RequireRole>}
-          /> */}
+            path="/babies/:babyId/care"
+            element={
+              <RequireRole roles={[ROLES.PARENT]}>
+                <CarePage />
+              </RequireRole>
+            }
+          />
+
+          <Route
+            path="/hospital/babies"
+            element={
+              <RequireRole roles={[ROLES.HOSPITAL_STAFF]}>
+                <HospitalBirthListPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/hospital/babies/new"
+            element={
+              <RequireRole roles={[ROLES.HOSPITAL_STAFF]}>
+                <RecordBirthPage />
+              </RequireRole>
+            }
+          />
           <Route path="*" element={<NotFoundPage />} />
+          <Route
+            path="/registration/apply"
+            element={
+              <RequireRole roles={[ROLES.PARENT]}>
+                <ApplyPage />
+              </RequireRole>
+            }
+          />
         </Routes>
       </Box>
     </>
