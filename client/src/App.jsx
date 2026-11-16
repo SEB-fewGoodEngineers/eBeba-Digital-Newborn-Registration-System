@@ -18,8 +18,6 @@ import RecordBirthPage from "./pages/hospital/RecordBirthPage";
 import { ROLES } from "./constants/labels";
 import { useUser } from "./contexts/UserContext";
 import CswCasesPage from "./pages/csw/CswCasesPage";
-import RequireRole from "./components/RequireRole/RequireRole";
-import { ROLES } from "./constants/labels";
 import ApplyPage from "./pages/registration/ApplyPage";
 
 export default function App() {
