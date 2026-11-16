@@ -8,6 +8,12 @@ import SignInPage from "./pages/auth/SignInPage";
 import SignUpPage from "./pages/auth/SignUpPage";
 import { useUser } from "./contexts/UserContext";
 
+import RequireRole from "./components/RequireRole/RequireRole";
+import { ROLES } from "./constants/labels";
+
+import RecordBirthPage from "./pages/hospital/RecordBirthPage";
+import HospitalBirthListPage from "./pages/hospital/HospitalBirthListPage";
+
 export default function App() {
   const { user, isLoading } = useUser();
 
@@ -40,6 +46,22 @@ export default function App() {
             path="/babies/:babyId/diary"
             element={<RequireRole roles={[ROLES.PARENT]}><DiaryPage /></RequireRole>}
           /> */}
+          <Route
+            path="/hospital/babies"
+            element={
+              <RequireRole roles={[ROLES.HOSPITAL_STAFF]}>
+                <HospitalBirthListPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/hospital/babies/new"
+            element={
+              <RequireRole roles={[ROLES.HOSPITAL_STAFF]}>
+                <RecordBirthPage />
+              </RequireRole>
+            }
+          />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Box>
