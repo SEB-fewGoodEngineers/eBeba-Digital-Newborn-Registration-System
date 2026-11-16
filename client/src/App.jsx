@@ -7,6 +7,9 @@ import NotFoundPage from "./pages/home/NotFoundPage";
 import SignInPage from "./pages/auth/SignInPage";
 import SignUpPage from "./pages/auth/SignUpPage";
 import { useUser } from "./contexts/UserContext";
+import RequireRole from "./components/RequireRole/RequireRole";
+import ApplyPage from "./pages/registration/ApplyPage";
+import { ROLES } from "./constants/labels";
 
 export default function App() {
   const { user, isLoading } = useUser();
@@ -41,6 +44,14 @@ export default function App() {
             element={<RequireRole roles={[ROLES.PARENT]}><DiaryPage /></RequireRole>}
           /> */}
           <Route path="*" element={<NotFoundPage />} />
+          <Route
+            path="/registration/apply"
+            element={
+              <RequireRole roles={[ROLES.PARENT]}>
+                <ApplyPage />
+              </RequireRole>
+            }
+          />
         </Routes>
       </Box>
     </>

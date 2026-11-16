@@ -7,6 +7,7 @@ const mongoSanitize = require("express-mongo-sanitize");
 const errorHandler = require("./middleware/errorHandler");
 const authRouter = require("./controllers/auth");
 const userRouter = require("./controllers/users");
+const registrationRouter = require("./controllers/registrations");
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.get("/", (req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
+app.use("/registrations", registrationRouter);
 
 // Unknown route
 app.use((req, res) => {
