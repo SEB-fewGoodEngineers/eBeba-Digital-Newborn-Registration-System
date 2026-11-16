@@ -1,3 +1,6 @@
+const dns = require("node:dns/promises");
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
+
 const dotenv = require("dotenv");
 const dns = require("node:dns/promises");
 
@@ -7,7 +10,8 @@ dotenv.config();
 const http = require("http");
 const mongoose = require("mongoose");
 const app = require("./app");
-
+const dns = require("node:dns");
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 // Stop early with a clear message if a setting is missing
 for (const key of ["MONGODB_URI", "JWT_SECRET"]) {
   if (!process.env[key]) {
