@@ -54,4 +54,11 @@ const createBabySchema = z
     }
   });
 
-module.exports = { createBabySchema };
+const linkBabySchema = z.object({
+  birthRecordNumber: z
+    .string({ error: "Birth record number is required." })
+    .trim()
+    .min(1, "Birth record number is required."),
+});
+
+module.exports = { createBabySchema, linkBabySchema };
