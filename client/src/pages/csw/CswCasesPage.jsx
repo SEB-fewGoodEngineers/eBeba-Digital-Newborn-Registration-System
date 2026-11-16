@@ -11,8 +11,15 @@ import {
   Typography,
   Stack,
   Divider,
+  Button,
+  TextField,
 } from "@mui/material";
-import { getCswCases } from "../../services/cswService";
+import {
+  getCswCases,
+  startCswCase,
+  completeCswCase,
+  rejectCswCase,
+} from "../../services/cswService";
 import StatusBadge from "../../components/StatusBadge/StatusBadge";
 import DemoBadge from "../../components/DemoBadge/DemoBadge";
 import { formatDate } from "../../utils/dates";
@@ -73,6 +80,7 @@ export default function CswCasesPage() {
         CSW Cases Queue
       </Typography>
       <Stack direction={{ xs: "column", md: "row" }} spacing={4}>
+        {/* Lijeva strana: Lista predmeta */}
         <Box sx={{ flex: 1 }}>
           <Card variant="outlined">
             <List disablePadding>
@@ -118,6 +126,7 @@ export default function CswCasesPage() {
           </Card>
         </Box>
 
+        {/* Desna strana: Detalji predmeta i akcije */}
         <Box sx={{ flex: 1 }}>
           {selectedCase ? (
             <Card variant="outlined">
@@ -129,6 +138,7 @@ export default function CswCasesPage() {
                   Status: <StatusBadge status={selectedCase.status} />
                 </Typography>
                 <Divider sx={{ my: 2 }} />
+                
                 <Typography variant="subtitle2">Baby Civil Data</Typography>
                 <Typography variant="body2">
                   First Name: {selectedCase.babyId?.firstName || "N/A"}
@@ -163,6 +173,73 @@ export default function CswCasesPage() {
                     {selectedCase.babyId?.father?.lastName}
                   </Typography>
                 )}
+
+                {/* Sekcija sa dugmadima za obradu predmeta (Start, Complete, Reject) */}
+                <Box sx={{ mt: 3, display: "flex", gap: 2, flexWrap: "wrap" }}>
+                  {selectedCase?.status === "received" && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={async () => {
+                        try {
+                          const updated = await startCswCase(selectedCase._id);
+                          setSelectedCase(updated);
+                        } catch (err) {
+                          alert(err.message);
+                        }
+                      }}
+                    >
+                      Start Case
+                    </Button>
+                  )}
+
+                  {selectedCase?.status === "in_progress" && (
+                    <>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={async () => {
+                          try {
+                            const updated = await completeCswCase(selectedCase._id);
+                            setSelectedCase(updated);
+                          } catch (err) {
+                            alert(err.message);
+                          }
+                        }}
+                      >
+                        Complete & Issue Social Card
+                      </Button>
+
+                      <Box sx={{ display: "flex", gap: 1, width: "100%", mt: 2 }}>
+                        <TextField
+                          label="Rejection Reason"
+                          size="small"
+                          fullWidth
+                          id="rejectNotes"
+                          placeholder="Enter reason for rejection..."
+                        />
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          onClick={async () => {
+                            const notesInput = document.getElementById("rejectNotes").value;
+                            try {
+                              const updated = await rejectCswCase(
+                                selectedCase._id,
+                                notesInput
+                              );
+                              setSelectedCase(updated);
+                            } catch (err) {
+                              alert(err.message);
+                            }
+                          }}
+                        >
+                          Reject
+                        </Button>
+                      </Box>
+                    </>
+                  )}
+                </Box>
               </CardContent>
             </Card>
           ) : (

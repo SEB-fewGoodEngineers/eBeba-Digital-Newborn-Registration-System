@@ -17,6 +17,7 @@ import RecordBirthPage from "./pages/hospital/RecordBirthPage";
 // CONTEXT AND CONSTANTS
 import { ROLES } from "./constants/labels";
 import { useUser } from "./contexts/UserContext";
+import CswCasesPage from "./pages/csw/CswCasesPage";
 import ApplyPage from "./pages/registration/ApplyPage";
 
 export default function App() {
@@ -44,6 +45,14 @@ export default function App() {
           <Route
             path="/sign-up"
             element={user ? <Navigate to="/" replace /> : <SignUpPage />}
+          />
+          <Route
+            path="/csw-cases"
+            element={
+              <RequireRole roles={[ROLES.CSW_STAFF]}>
+                <CswCasesPage />
+              </RequireRole>
+            }
           />
 
           <Route
