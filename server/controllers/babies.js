@@ -1,6 +1,7 @@
 
 const express = require("express");
 const Baby = require("../models/Baby");
+const Registration = require("../models/Registration");
 const Institution = require("../models/Institution");
 
 const {
@@ -70,7 +71,25 @@ router.get(
       hospitalId: req.user.institutionId,
     }).sort({ createdAt: -1 });
 
-    res.status(200).json(babies);
+    const babyIds = babies.map((baby) => baby._id);
+
+    const registrations = await Registration.find({
+      babyId: { $in: babyIds },
+    });
+
+    const statusByBabyId = new Map(
+      registrations.map((registration) => [
+        String(registration.babyId),
+        registration.status,
+      ]),
+    );
+
+    const result = babies.map((baby) => ({
+      ...baby.toObject(),
+      registrationStatus: statusByBabyId.get(String(baby._id)) || null,
+    }));
+
+    res.status(200).json(result);
   }),
 );
 

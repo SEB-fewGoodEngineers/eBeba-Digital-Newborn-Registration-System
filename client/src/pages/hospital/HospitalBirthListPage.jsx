@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -17,6 +18,8 @@ import {
 
 import { getBabies } from "../../services/babyService";
 import { formatDateTime } from "../../utils/dates";
+import StatusBadge from "../../components/StatusBadge/StatusBadge";
+import DemoBadge from "../../components/DemoBadge/DemoBadge";
 
 export default function HospitalBirthListPage() {
   const [babies, setBabies] = useState([]);
@@ -78,6 +81,8 @@ export default function HospitalBirthListPage() {
                 <TableCell>Gender</TableCell>
                 <TableCell>Mother</TableCell>
                 <TableCell>Municipality</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>JMBG</TableCell>
               </TableRow>
             </TableHead>
 
@@ -86,7 +91,9 @@ export default function HospitalBirthListPage() {
                 <TableRow key={baby._id}>
                   <TableCell>{baby.birthRecordNumber}</TableCell>
 
-                  <TableCell>{formatDateTime(baby.birthDateTime)}</TableCell>
+                  <TableCell>
+                    {formatDateTime(baby.birthDateTime)}
+                  </TableCell>
 
                   <TableCell>
                     {baby.gender === "M" ? "Male" : "Female"}
@@ -97,6 +104,23 @@ export default function HospitalBirthListPage() {
                   </TableCell>
 
                   <TableCell>{baby.municipalityOfBirth}</TableCell>
+
+                  <TableCell>
+                    <StatusBadge
+                      status={baby.registrationStatus || "Not applied"}
+                    />
+                  </TableCell>
+
+                  <TableCell>
+                    {baby.registrationStatus === "approved" && baby.jmbg ? (
+                      <>
+                        {baby.jmbg}
+                        <DemoBadge />
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
