@@ -17,11 +17,19 @@ import HospitalBirthListPage from "./pages/hospital/HospitalBirthListPage";
 import RecordBirthPage from "./pages/hospital/RecordBirthPage";
 import CswCasesPage from "./pages/csw/CswCasesPage";
 import ApplyPage from "./pages/registration/ApplyPage";
+import QueuePage from "./pages/moi/QueuePage";
 import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
+import ReviewPage from "./pages/moi/ReviewPage";
 
 // STORY 1.2 - LINK MY BABY
 import LinkBabyPage from "./pages/registration/LinkBabyPage";
 import MyBabiesPage from "./pages/registration/MyBabiesPage";
+
+// A3 - ADMIN: CREATE STAFF USERS
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+
+// A4 - ADMIN: READ AUDIT LOGS
+import AdminAuditLogPage from "./pages/admin/AdminAuditLogPage";
 
 // CONTEXT AND CONSTANTS
 import { ROLES } from "./constants/labels";
@@ -112,7 +120,6 @@ export default function App() {
           />
 
           {/* STORY 4.1 - MEDICAL RECORDS */}
-
           <Route
             path="/babies/:babyId/medical-records"
             element={
@@ -127,6 +134,45 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.PARENT]}>
                 <ApplyPage />
+              </RequireRole>
+            }
+          />
+
+          {/* A3 - ADMIN: CREATE STAFF USERS */}
+          <Route
+            path="/admin/users"
+            element={
+              <RequireRole roles={[ROLES.ADMIN]}>
+                <AdminUsersPage />
+              </RequireRole>
+            }
+          />
+
+          {/* A4 - ADMIN: READ AUDIT LOGS */}
+          <Route
+            path="/admin/audit-logs"
+            element={
+              <RequireRole roles={[ROLES.ADMIN]}>
+                <AdminAuditLogPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 2.2 - MOI QUEUE */}
+          <Route
+            path="/moi/queue"
+            element={
+              <RequireRole roles={[ROLES.MOI_STAFF]}>
+                <QueuePage />
+              </RequireRole>
+            }
+          />
+
+          <Route
+            path="/moi/review/:registrationId"
+            element={
+              <RequireRole roles={[ROLES.MOI_STAFF]}>
+                <ReviewPage />
               </RequireRole>
             }
           />

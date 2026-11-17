@@ -7,7 +7,13 @@ import {
   Chip,
   CircularProgress,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
+  IconButton,
   List,
   ListItem,
   ListItemText,
@@ -20,8 +26,11 @@ import {
 import {
   createDiaryEntry,
   createGrowthMeasurement,
+  createMilestone,
+  deleteDiaryEntry,
   getDiaryEntries,
   getGrowthMeasurements,
+  getMilestones,
 } from "../../services/careService";
 import {
   formatDate,
@@ -52,6 +61,13 @@ const DIAPER_TYPE_OPTIONS = [
   { value: "both", label: "Both" },
 ];
 
+const MILESTONE_CATEGORY_OPTIONS = [
+  { value: "motor", label: "Motor" },
+  { value: "cognitive", label: "Cognitive" },
+  { value: "social", label: "Social" },
+  { value: "language", label: "Language" },
+];
+
 const CATEGORY_LABELS = Object.fromEntries(
   CATEGORY_OPTIONS.map((item) => [item.value, item.label]),
 );
@@ -62,6 +78,10 @@ const FEEDING_LABELS = Object.fromEntries(
 
 const DIAPER_LABELS = Object.fromEntries(
   DIAPER_TYPE_OPTIONS.map((item) => [item.value, item.label]),
+);
+
+const MILESTONE_CATEGORY_LABELS = Object.fromEntries(
+  MILESTONE_CATEGORY_OPTIONS.map((item) => [item.value, item.label]),
 );
 
 const createInitialDiaryForm = () => ({
@@ -80,6 +100,13 @@ const createInitialGrowthForm = () => ({
   weightGrams: "",
   heightCm: "",
   headCircumferenceCm: "",
+});
+
+const createInitialMilestoneForm = () => ({
+  category: "motor",
+  title: "",
+  achievedAt: toDateInput(new Date().toISOString()),
+  notes: "",
 });
 
 const formatEntryDetails = (entry) => {
@@ -110,21 +137,34 @@ export default function CarePage() {
 
   // Diary state
   const [entries, setEntries] = useState([]);
-  const [diaryStatus, setDiaryStatus] = useState("loading"); // "loading" | "error" | "ready"
+  const [diaryStatus, setDiaryStatus] = useState("loading");
   const [diaryLoadError, setDiaryLoadError] = useState("");
   const [diaryForm, setDiaryForm] = useState(createInitialDiaryForm);
   const [diaryFormError, setDiaryFormError] = useState("");
   const [diaryFieldErrors, setDiaryFieldErrors] = useState({});
   const [isSavingDiary, setIsSavingDiary] = useState(false);
 
+  // Delete dialog state
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Growth state
   const [measurements, setMeasurements] = useState([]);
-  const [growthStatus, setGrowthStatus] = useState("loading"); // "loading" | "error" | "ready"
+  const [growthStatus, setGrowthStatus] = useState("loading");
   const [growthLoadError, setGrowthLoadError] = useState("");
   const [growthForm, setGrowthForm] = useState(createInitialGrowthForm);
   const [growthFormError, setGrowthFormError] = useState("");
   const [growthFieldErrors, setGrowthFieldErrors] = useState({});
   const [isSavingGrowth, setIsSavingGrowth] = useState(false);
+
+  // Milestone state
+  const [milestones, setMilestones] = useState([]);
+  const [milestoneStatus, setMilestoneStatus] = useState("loading");
+  const [milestoneLoadError, setMilestoneLoadError] = useState("");
+  const [milestoneForm, setMilestoneForm] = useState(createInitialMilestoneForm);
+  const [milestoneFormError, setMilestoneFormError] = useState("");
+  const [milestoneFieldErrors, setMilestoneFieldErrors] = useState({});
+  const [isSavingMilestone, setIsSavingMilestone] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -163,6 +203,28 @@ export default function CarePage() {
         if (!ignore) {
           setGrowthLoadError(err.message);
           setGrowthStatus("error");
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [babyId]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    getMilestones(babyId)
+      .then((data) => {
+        if (!ignore) {
+          setMilestones(data);
+          setMilestoneStatus("ready");
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          setMilestoneLoadError(err.message);
+          setMilestoneStatus("error");
         }
       });
 
@@ -231,6 +293,22 @@ export default function CarePage() {
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
+    try {
+      await deleteDiaryEntry(babyId, deleteTargetId);
+      const { from, to } = todayRange();
+      const updated = await getDiaryEntries(babyId, from, to);
+      setEntries(updated);
+      setDeleteTargetId(null);
+    } catch (err) {
+      setDiaryLoadError(err.message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleGrowthChange = (evt) => {
     setGrowthFormError("");
     setGrowthFieldErrors({});
@@ -269,6 +347,41 @@ export default function CarePage() {
       );
     } finally {
       setIsSavingGrowth(false);
+    }
+  };
+
+  const handleMilestoneChange = (evt) => {
+    setMilestoneFormError("");
+    setMilestoneFieldErrors({});
+    setMilestoneForm({ ...milestoneForm, [evt.target.name]: evt.target.value });
+  };
+
+  const buildMilestonePayload = () => ({
+    category: milestoneForm.category,
+    title: milestoneForm.title.trim(),
+    achievedAt: toIso(milestoneForm.achievedAt),
+    notes: milestoneForm.notes.trim() || undefined,
+  });
+
+  const handleMilestoneSubmit = async (evt) => {
+    evt.preventDefault();
+    setIsSavingMilestone(true);
+    setMilestoneFormError("");
+    setMilestoneFieldErrors({});
+
+    try {
+      await createMilestone(babyId, buildMilestonePayload());
+      const updated = await getMilestones(babyId);
+      setMilestones(updated);
+      setMilestoneStatus("ready");
+      setMilestoneForm(createInitialMilestoneForm());
+    } catch (err) {
+      setMilestoneFormError(err.message);
+      setMilestoneFieldErrors(
+        Object.fromEntries(err.details.map((d) => [d.field, d.message])),
+      );
+    } finally {
+      setIsSavingMilestone(false);
     }
   };
 
@@ -456,7 +569,20 @@ export default function CarePage() {
               ].filter(Boolean);
 
               return (
-                <ListItem key={entry._id} divider disableGutters>
+                <ListItem
+                  key={entry._id}
+                  divider
+                  disableGutters
+                  secondaryAction={
+                    <IconButton
+                      edge="end"
+                      aria-label="delete"
+                      onClick={() => setDeleteTargetId(entry._id)}
+                    >
+                      ✕
+                    </IconButton>
+                  }
+                >
                   <ListItemText
                     primary={
                       <Stack direction="row" spacing={1} alignItems="center">
@@ -482,8 +608,39 @@ export default function CarePage() {
         )}
       </Paper>
 
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={Boolean(deleteTargetId)}
+        onClose={() => setDeleteTargetId(null)}
+      >
+        <DialogTitle>Delete entry</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Delete this entry? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteTargetId(null)}
+            disabled={isDeleting}
+            type="button"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            disabled={isDeleting}
+            type="button"
+          >
+            {isDeleting ? "Deleting…" : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Growth Section */}
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h5" component="h2" gutterBottom>
           Growth
         </Typography>
@@ -594,6 +751,137 @@ export default function CarePage() {
                   <ListItemText
                     primary={parts.join(" · ")}
                     secondary={formatDate(item.measuredAt)}
+                  />
+                </ListItem>
+              );
+            })}
+          </List>
+        )}
+      </Paper>
+
+      {/* Milestones Section */}
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h5" component="h2" gutterBottom>
+          Milestones
+        </Typography>
+
+        <Box component="form" onSubmit={handleMilestoneSubmit} noValidate>
+          <Stack spacing={2}>
+            {milestoneFormError && (
+              <Alert severity="error">{milestoneFormError}</Alert>
+            )}
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <TextField
+                select
+                label="Category"
+                name="category"
+                value={milestoneForm.category}
+                onChange={handleMilestoneChange}
+                error={Boolean(milestoneFieldErrors.category)}
+                helperText={milestoneFieldErrors.category}
+                fullWidth
+              >
+                {MILESTONE_CATEGORY_OPTIONS.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                label="Title (e.g. First smile)"
+                name="title"
+                value={milestoneForm.title}
+                onChange={handleMilestoneChange}
+                error={Boolean(milestoneFieldErrors.title)}
+                helperText={milestoneFieldErrors.title}
+                required
+                fullWidth
+              />
+            </Stack>
+
+            <TextField
+              label="Date achieved"
+              name="achievedAt"
+              type="date"
+              value={milestoneForm.achievedAt}
+              onChange={handleMilestoneChange}
+              error={Boolean(milestoneFieldErrors.achievedAt)}
+              helperText={milestoneFieldErrors.achievedAt}
+              slotProps={{ inputLabel: { shrink: true } }}
+              required
+              fullWidth
+            />
+
+            <TextField
+              label="Notes"
+              name="notes"
+              value={milestoneForm.notes}
+              onChange={handleMilestoneChange}
+              error={Boolean(milestoneFieldErrors.notes)}
+              helperText={
+                milestoneFieldErrors.notes || "Optional (max 500 characters)"
+              }
+              slotProps={{ htmlInput: { maxLength: 500 } }}
+              multiline
+              minRows={2}
+              fullWidth
+            />
+
+            <Box>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={isSavingMilestone}
+              >
+                {isSavingMilestone ? "Saving…" : "Add milestone"}
+              </Button>
+            </Box>
+          </Stack>
+        </Box>
+
+        <Divider sx={{ my: 3 }} />
+
+        <Typography variant="h6" component="h3" gutterBottom>
+          Milestones list
+        </Typography>
+
+        {milestoneStatus === "loading" && (
+          <CircularProgress aria-label="Loading" />
+        )}
+        {milestoneStatus === "error" && (
+          <Alert severity="error">{milestoneLoadError}</Alert>
+        )}
+        {milestoneStatus === "ready" && milestones.length === 0 && (
+          <Typography color="text.secondary">No milestones yet.</Typography>
+        )}
+        {milestoneStatus === "ready" && milestones.length > 0 && (
+          <List disablePadding>
+            {milestones.map((item) => {
+              const secondaryParts = [
+                formatDate(item.achievedAt),
+                item.notes,
+              ].filter(Boolean);
+
+              return (
+                <ListItem key={item._id} divider disableGutters>
+                  <ListItemText
+                    primary={
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Chip
+                          label={
+                            MILESTONE_CATEGORY_LABELS[item.category] ||
+                            item.category
+                          }
+                          size="small"
+                        />
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          {item.title}
+                        </Typography>
+                      </Stack>
+                    }
+                    secondary={secondaryParts.join(" — ")}
                   />
                 </ListItem>
               );
