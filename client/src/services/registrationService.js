@@ -18,3 +18,8 @@ export const listRegistrations = (status = "pending") => {
 // server-only endpoint, moi_staff only.
 export const getRegistrationReview = (registrationId) =>
   api(`/registrations/${registrationId}/review`);
+
+// MoI staff: approve an application. Returns { jmbg, certificateNumber, … }.
+// Idempotent on the server: second call returns 409.
+export const approveRegistration = (registrationId) =>
+  api(`/registrations/${registrationId}/approve`, { method: "POST" });

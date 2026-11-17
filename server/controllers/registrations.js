@@ -8,6 +8,10 @@ const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
 const {
+  approveRegistration: approveRegistrationService,
+} = require("../services/workflow");
+
+const {
   createRegistrationSchema,
   updateRegistrationSchema,
   listRegistrationsQuerySchema, // NEW
@@ -22,7 +26,7 @@ const isLinkedParent = (user, baby) =>
   user.role === ROLES.PARENT &&
   baby.authorizedUserIds.some((id) => id.equals(user._id));
 
-  // APPLY TO REGISTER A BABY (parent only)
+// APPLY TO REGISTER A BABY (parent only)
 router.post(
   "/",
   verifyToken,
@@ -104,9 +108,7 @@ router.get(
     // 2. Query. Explicit projection + narrow populate = no PII in the list.
     const registrations = await Registration.find({ status })
       .sort({ createdAt: 1 }) // oldest first
-      .select(
-        "proposedFirstName proposedLastName status createdAt babyId",
-      )
+      .select("proposedFirstName proposedLastName status createdAt babyId")
       .populate({
         path: "babyId",
         select: "birthDateTime hospitalId gender",
@@ -280,6 +282,62 @@ router.get(
             }
           : null,
       },
+    });
+  }),
+);
+
+// APPROVE A REGISTRATION (moi_staff only).
+// The controller does NOT touch collections. approveRegistration (W2) owns
+// all writes and is idempotent. 409 if the transition is not allowed.
+router.post(
+  "/:registrationId/approve",
+  verifyToken,
+  requireRole(ROLES.MOI_STAFF),
+  asyncHandler(async (req, res) => {
+    const { registrationId } = req.params;
+    if (!mongoose.isValidObjectId(registrationId)) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    // Load the full document (not lean) — transition() mutates it and saves.
+    const registration = await Registration.findById(registrationId);
+    if (!registration) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    // Short-circuit the common "already approved" case, with a clear message.
+    // transition() would also refuse it, but a specific message here is friendlier.
+    if (registration.status === REGISTRATION_STATUS.APPROVED) {
+      return res
+        .status(409)
+        .json({ err: "This application has already been approved." });
+    }
+
+    try {
+      // Approve. transition() inside throws 409 for any not-allowed change.
+      await approveRegistrationService(registration, req.user);
+    } catch (err) {
+      if (err.status === 409) {
+        return res.status(409).json({ err: err.message });
+      }
+      throw err; // asyncHandler -> errorHandler -> 500
+    }
+
+    // Fetch the certificate that approveRegistration created (upserted).
+    // This is the read side; the write side owns the fields.
+    const certificate = await Certificate.findOne({
+      babyId: registration.babyId,
+    })
+      .select("certificateNumber jmbg verificationCode issuedAt")
+      .lean();
+
+    res.status(200).json({
+      registrationId: registration._id,
+      status: registration.status, // "approved" after W2
+      jmbg: certificate?.jmbg ?? null,
+      certificateNumber: certificate?.certificateNumber ?? null,
+      verificationCode: certificate?.verificationCode ?? null,
+      issuedAt: certificate?.issuedAt ?? null,
     });
   }),
 );
