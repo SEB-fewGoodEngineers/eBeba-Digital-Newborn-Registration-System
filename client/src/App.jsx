@@ -1,3 +1,4 @@
+
 import { Navigate, Route, Routes } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
 
@@ -112,6 +113,7 @@ export default function App() {
           />
 
           {/* STORY 4.1 - MEDICAL RECORDS */}
+
           <Route
             path="/babies/:babyId/medical-records"
             element={
