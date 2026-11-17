@@ -10,15 +10,13 @@ const workflow = require("../services/workflow");
 const notifications = require("../services/notifications");
 const { ROLES, INSURANCE_STATUS, INSTITUTION_TYPES } = require("../constants");
 const { z } = require("zod");
+const { notify } = require("../services/notifications");
 
 const router = express.Router();
 
 router.use(verifyToken, requireRole(ROLES.HEALTH_INSURANCE_STAFF));
 
-// Validatori za FZO akcije
-const issueInsuranceSchema = z.object({
-  insuredParentId: z.string().min(1, "Insured parent ID is required."),
-});
+const { issueInsuranceSchema } = require("../validators/insuranceRecords");
 
 const assignPediatricianSchema = z.object({
   pediatricianId: z.string().min(1, "Pediatrician ID is required."),
@@ -76,6 +74,7 @@ router.post(
       action: "insurance_record.start",
       targetCollection: "insuranceRecords",
       targetDocumentId: record._id,
+      changes: { after: record },
     });
 
     res.status(200).json(record);
@@ -96,13 +95,13 @@ router.post(
       return res.status(404).json({ err: "Insurance record not found." });
     }
 
+    workflow.transition(record, INSURANCE_STATUS.CARD_ISSUED, req.user, "Cards issued");
     record.insuredParentId = req.body.insuredParentId;
     record.policyNumber = workflow.generateNumber("POL");
     record.healthCardNumber = workflow.generateNumber("HC");
     record.insuredPersonCardNumber = workflow.generateNumber("IPC");
     record.cardIssuedAt = new Date();
-
-    workflow.transition(record, INSURANCE_STATUS.CARD_ISSUED, req.user, "Cards issued successfully");
+    record.processedByUserId = req.user._id;
     await record.save();
 
     await audit.log({
@@ -110,13 +109,17 @@ router.post(
       action: "insurance_record.issue",
       targetCollection: "insuranceRecords",
       targetDocumentId: record._id,
+      changes: { after: record },
     });
 
-    if (record.babyId && record.babyId.authorizedUserIds) {
-      await notifications.notifyMany(record.babyId.authorizedUserIds, {
-        type: "insurance.card_issued",
-        title: "Health insurance cards issued",
-        message: "Your baby's health insurance cards have been successfully issued.",
+   const baby = await Baby.findById(record.babyId);
+    if (baby && baby.authorizedUserIds) {
+      await notify(baby.authorizedUserIds, {
+        type: "insurance_record.card_issued",
+        title: "Insurance cards issued",
+        message: "Your baby's health insurance cards have been issued.",
+        link: `/babies/${baby._id}`,
+        babyId: baby._id,
       });
     }
 

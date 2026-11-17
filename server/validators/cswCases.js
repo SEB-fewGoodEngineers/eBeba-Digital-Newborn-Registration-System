@@ -1,15 +1,11 @@
 const { z } = require("zod");
 
-const listQuerySchema = z.object({
-  status: z.string().optional(),
-});
-
-// Šema za odbijanje predmeta - napomena (notes) je obavezna i ne smije biti prazna
-const rejectCswCaseSchema = z.object({
+const notesSchema = z.object({
   notes: z
-    .string({ error: "Notes are required for rejection." })
+    .string({ error: "Notes are required." })
     .trim()
-    .min(1, "Notes are required for rejection."),
+    .min(1, "Notes are required.")
+    .max(1000, "Notes are too long."),
 });
 
-module.exports = { listQuerySchema,rejectCswCaseSchema };
+module.exports = { notesSchema };
