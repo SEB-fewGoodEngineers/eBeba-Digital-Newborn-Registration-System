@@ -1,7 +1,7 @@
 import { Link as RouterLink, useNavigate } from "react-router";
 import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
 import { useUser } from "../../contexts/UserContext";
-import { ROLE_LABELS } from "../../constants/labels";
+import { ROLE_LABELS, ROLES } from "../../constants/labels"; // merged
 
 export default function NavBar() {
   // Fixed from the template: setUser was used in sign-out but never taken from the context
@@ -27,6 +27,11 @@ export default function NavBar() {
 
         {user ? (
           <>
+            {user.role === ROLES.MOI_STAFF && (
+              <Button color="inherit" component={RouterLink} to="/moi/queue">
+                MoI queue
+              </Button>
+            )}
             <Box
               component="span"
               sx={{ display: { xs: "none", sm: "inline" }, mr: 1 }}

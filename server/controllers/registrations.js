@@ -7,11 +7,12 @@ const { verifyToken, requireRole } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
-const { ROLES, REGISTRATION_STATUS } = require("../constants");
 const {
   createRegistrationSchema,
   updateRegistrationSchema,
+  listRegistrationsQuerySchema, // NEW
 } = require("../validators/registrations");
+const { ROLES, REGISTRATION_STATUS } = require("../constants");
 
 const router = express.Router();
 
@@ -21,7 +22,7 @@ const isLinkedParent = (user, baby) =>
   user.role === ROLES.PARENT &&
   baby.authorizedUserIds.some((id) => id.equals(user._id));
 
-// APPLY TO REGISTER A BABY (parent only)
+  // APPLY TO REGISTER A BABY (parent only)
 router.post(
   "/",
   verifyToken,
@@ -84,6 +85,56 @@ router.post(
       statusHistory: registration.statusHistory,
       createdAt: registration.createdAt,
     });
+  }),
+);
+
+// LIST APPLICATIONS (MoI queue). Oldest first. moi_staff only.
+router.get(
+  "/",
+  verifyToken,
+  requireRole(ROLES.MOI_STAFF),
+  asyncHandler(async (req, res) => {
+    // 1. Validate the query string. Anything that is not a known status → 400.
+    const parsed = listRegistrationsQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ err: "Bad status filter." });
+    }
+    const { status } = parsed.data; // "pending" by default
+
+    // 2. Query. Explicit projection + narrow populate = no PII in the list.
+    const registrations = await Registration.find({ status })
+      .sort({ createdAt: 1 }) // oldest first
+      .select(
+        "proposedFirstName proposedLastName status createdAt babyId",
+      )
+      .populate({
+        path: "babyId",
+        select: "birthDateTime hospitalId gender",
+        populate: {
+          path: "hospitalId",
+          select: "name municipality",
+        },
+      })
+      .lean();
+
+    // 3. Response: small, fixed shape. No JMBG, no mother/father, no address.
+    res.status(200).json(
+      registrations.map((r) => ({
+        _id: r._id,
+        proposedFirstName: r.proposedFirstName,
+        proposedLastName: r.proposedLastName,
+        status: r.status,
+        createdAt: r.createdAt,
+        birthDateTime: r.babyId?.birthDateTime,
+        gender: r.babyId?.gender,
+        hospital: r.babyId?.hospitalId
+          ? {
+              name: r.babyId.hospitalId.name,
+              municipality: r.babyId.hospitalId.municipality,
+            }
+          : null,
+      })),
+    );
   }),
 );
 
