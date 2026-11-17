@@ -6,53 +6,63 @@ const { verifyToken, requireRole } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
+const { notifyMany } = require("../services/notifications");
 const workflow = require("../services/workflow");
-const notifications = require("../services/notifications");
-const { ROLES, INSURANCE_STATUS, INSTITUTION_TYPES } = require("../constants");
-const { z } = require("zod");
-const { notify } = require("../services/notifications");
+const { ROLES, INSURANCE_STATUS } = require("../constants");
+const {
+  issueInsuranceSchema,
+  assignPediatricianSchema,
+} = require("../validators/insuranceRecords");
 
 const router = express.Router();
 
 router.use(verifyToken, requireRole(ROLES.HEALTH_INSURANCE_STAFF));
 
-const { issueInsuranceSchema } = require("../validators/insuranceRecords");
-
-const assignPediatricianSchema = z.object({
-  pediatricianId: z.string().min(1, "Pediatrician ID is required."),
-});
-
-// 3.3 LISTA FZO ZAPISA ZA GRANU FZO
+// GET FZO RECORDS FOR THE BRANCH
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const records = await InsuranceRecord.find({ fundBranchId: req.user.institutionId })
+    const records = await InsuranceRecord.find({
+      fundBranchId: req.user.institutionId,
+    })
       .sort({ createdAt: -1 })
-      .populate("babyId")
-      .lean();
+      .populate("babyId");
     res.status(200).json(records);
-  })
+  }),
 );
 
-// DETALJI JEDNOG ZAPISA
+// GET ACTIVE PEDIATRICIANS LIST (must be defined before /:recordId)
+router.get(
+  "/pediatricians",
+  asyncHandler(async (req, res) => {
+    const pediatricians = await User.find({
+      role: ROLES.PEDIATRICIAN,
+      isActive: true,
+    })
+      .select("firstName lastName email institutionId")
+      .populate("institutionId", "name municipality");
+
+    res.status(200).json(pediatricians);
+  }),
+);
+
+// GET A SINGLE FZO RECORD WITH BABY AND PARENTS
 router.get(
   "/:recordId",
   asyncHandler(async (req, res) => {
     const record = await InsuranceRecord.findOne({
       _id: req.params.recordId,
       fundBranchId: req.user.institutionId,
-    })
-      .populate("babyId")
-      .lean();
+    }).populate("babyId");
 
     if (!record) {
       return res.status(404).json({ err: "Insurance record not found." });
     }
     res.status(200).json(record);
-  })
+  }),
 );
 
-// 3.4 START FZO ZAPISA (prelazak u "in_progress")
+// START PROCESSING AN INSURANCE RECORD
 router.post(
   "/:recordId/start",
   asyncHandler(async (req, res) => {
@@ -65,7 +75,12 @@ router.post(
       return res.status(404).json({ err: "Insurance record not found." });
     }
 
-    workflow.transition(record, INSURANCE_STATUS.IN_PROGRESS, req.user, "Started processing insurance");
+    workflow.transition(
+      record,
+      INSURANCE_STATUS.IN_PROGRESS,
+      req.user,
+      "Started insurance processing",
+    );
     record.processedByUserId = req.user._id;
     await record.save();
 
@@ -78,10 +93,10 @@ router.post(
     });
 
     res.status(200).json(record);
-  })
+  }),
 );
 
-// 3.4 ISSUE INSURANCE AND CARDS (generisanje brojeva i prelazak u "card_issued")
+// ISSUE CARDS AND INSURANCE
 router.post(
   "/:recordId/issue",
   validate(issueInsuranceSchema),
@@ -89,13 +104,32 @@ router.post(
     const record = await InsuranceRecord.findOne({
       _id: req.params.recordId,
       fundBranchId: req.user.institutionId,
-    }).populate("babyId");
+    });
 
     if (!record) {
       return res.status(404).json({ err: "Insurance record not found." });
     }
 
-    workflow.transition(record, INSURANCE_STATUS.CARD_ISSUED, req.user, "Cards issued");
+    const baby = await Baby.findById(record.babyId);
+    if (!baby) {
+      return res.status(404).json({ err: "Baby not found." });
+    }
+
+    const isLinkedParent = baby.authorizedUserIds.some((id) =>
+      id.equals(req.body.insuredParentId),
+    );
+    if (!isLinkedParent) {
+      return res
+        .status(400)
+        .json({ err: "Selected parent is not linked to this baby." });
+    }
+
+    workflow.transition(
+      record,
+      INSURANCE_STATUS.CARD_ISSUED,
+      req.user,
+      "Cards issued",
+    );
     record.insuredParentId = req.body.insuredParentId;
     record.policyNumber = workflow.generateNumber("POL");
     record.healthCardNumber = workflow.generateNumber("HC");
@@ -112,9 +146,8 @@ router.post(
       changes: { after: record },
     });
 
-   const baby = await Baby.findById(record.babyId);
-    if (baby && baby.authorizedUserIds) {
-      await notify(baby.authorizedUserIds, {
+    if (baby.authorizedUserIds.length > 0) {
+      await notifyMany(baby.authorizedUserIds, {
         type: "insurance_record.card_issued",
         title: "Insurance cards issued",
         message: "Your baby's health insurance cards have been issued.",
@@ -124,26 +157,10 @@ router.post(
     }
 
     res.status(200).json(record);
-  })
+  }),
 );
 
-// 3.5 LISTA AKTIVNIH PEDIATARA ZA DODELU
-router.get(
-  "/pediatricians",
-  asyncHandler(async (req, res) => {
-    // Nalazi sve korisnike sa ulogom PEDIATRICIAN
-    const pediatricians = await User.find({
-      role: ROLES.PEDIATRICIAN,
-      isActive: true,
-    })
-      .select("firstName lastName email institutionId")
-      .lean();
-
-    res.status(200).json(pediatricians);
-  })
-);
-
-// 3.5 ASSIGN PEDIATRICIAN
+// ASSIGN A PEDIATRICIAN TO THE BABY
 router.post(
   "/:recordId/pediatrician",
   validate(assignPediatricianSchema),
@@ -164,15 +181,17 @@ router.post(
     });
 
     if (!pediatrician) {
-      return res.status(404).json({ err: "Active pediatrician not found." });
+      return res
+        .status(400)
+        .json({ err: "Selected user is not an active pediatrician." });
     }
 
-    // Dodeljivanje pedijatra bebi (čuva se u babies.assignedPediatricianId)
     const baby = await Baby.findById(record.babyId);
     if (!baby) {
-      return res.status(404).json({ err: "Baby record not found." });
+      return res.status(404).json({ err: "Baby not found." });
     }
 
+    const previousPediatricianId = baby.assignedPediatricianId;
     baby.assignedPediatricianId = pediatrician._id;
     await baby.save();
 
@@ -181,18 +200,24 @@ router.post(
       action: "baby.assign_pediatrician",
       targetCollection: "babies",
       targetDocumentId: baby._id,
+      changes: {
+        before: { assignedPediatricianId: previousPediatricianId },
+        after: { assignedPediatricianId: baby.assignedPediatricianId },
+      },
     });
 
-    if (baby.authorizedUserIds) {
-      await notifications.notifyMany(baby.authorizedUserIds, {
+    if (baby.authorizedUserIds.length > 0) {
+      await notifyMany(baby.authorizedUserIds, {
         type: "baby.pediatrician_assigned",
         title: "Pediatrician assigned",
-        message: "A pediatrician has been assigned to your baby.",
+        message: `Dr. ${pediatrician.firstName} ${pediatrician.lastName} has been assigned as your baby's pediatrician.`,
+        link: `/babies/${baby._id}`,
+        babyId: baby._id,
       });
     }
 
-    res.status(200).json({ message: "Pediatrician assigned successfully.", baby });
-  })
+    res.status(200).json(baby);
+  }),
 );
 
 module.exports = router;

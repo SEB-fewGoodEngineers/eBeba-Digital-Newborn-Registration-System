@@ -1,10 +1,17 @@
 const { z } = require("zod");
 const mongoose = require("mongoose");
 
+const objectIdString = (label) =>
+  z
+    .string({ error: `${label} is required.` })
+    .refine((val) => mongoose.isValidObjectId(val), `Invalid ${label}.`);
+
 const issueInsuranceSchema = z.object({
-  insuredParentId: z
-    .string({ error: "Insured parent ID is required." })
-    .refine((val) => mongoose.isValidObjectId(val), "Invalid parent ID."),
+  insuredParentId: objectIdString("Insured parent ID"),
 });
 
-module.exports = { issueInsuranceSchema };
+const assignPediatricianSchema = z.object({
+  pediatricianId: objectIdString("Pediatrician ID"),
+});
+
+module.exports = { issueInsuranceSchema, assignPediatricianSchema };
