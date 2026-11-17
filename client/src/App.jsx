@@ -1,3 +1,4 @@
+
 import { Navigate, Route, Routes } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
 
@@ -23,6 +24,9 @@ import ReviewPage from "./pages/moi/ReviewPage";
 // STORY 1.2 - LINK MY BABY
 import LinkBabyPage from "./pages/registration/LinkBabyPage";
 import MyBabiesPage from "./pages/registration/MyBabiesPage";
+
+// A3 - ADMIN: CREATE STAFF USERS
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
 
 // CONTEXT AND CONSTANTS
 import { ROLES } from "./constants/labels";
@@ -113,7 +117,6 @@ export default function App() {
           />
 
           {/* STORY 4.1 - MEDICAL RECORDS */}
-
           <Route
             path="/babies/:babyId/medical-records"
             element={
@@ -128,6 +131,16 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.PARENT]}>
                 <ApplyPage />
+              </RequireRole>
+            }
+          />
+
+          {/* A3 - ADMIN: CREATE STAFF USERS */}
+          <Route
+            path="/admin/users"
+            element={
+              <RequireRole roles={[ROLES.ADMIN]}>
+                <AdminUsersPage />
               </RequireRole>
             }
           />
