@@ -42,13 +42,23 @@ export default function NavBar() {
             </Box>
 
             {user.role === ROLES.ADMIN && (
-              <Button
-                color="inherit"
-                component={RouterLink}
-                to="/admin/users"
-              >
-                Users
-              </Button>
+              <>
+                <Button
+                  color="inherit"
+                  component={RouterLink}
+                  to="/admin/users"
+                >
+                  Users
+                </Button>
+
+                <Button
+                  color="inherit"
+                  component={RouterLink}
+                  to="/admin/audit-logs"
+                >
+                  Audit logs
+                </Button>
+              </>
             )}
 
             <Button color="inherit" onClick={handleSignOut}>

@@ -5,16 +5,22 @@ const mongoose = require("mongoose");
 
 const User = require("../models/User");
 const Institution = require("../models/Institution");
+const AuditLog = require("../models/AuditLog");
+
 const { ROLES } = require("../constants");
 const { verifyToken, requireRole } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
+const {
+  disconnectNotificationUser,
+} = require("../services/notifications");
 
 const {
   createStaffSchema,
   updateStaffStatusSchema,
   isStaffInstitutionMatch,
+  auditLogQuerySchema,
 } = require("../validators/admin");
 
 const router = express.Router();
@@ -141,6 +147,11 @@ router.patch(
     user.isActive = req.body.isActive;
     await user.save();
 
+    // Disconnect active sockets when the account is deactivated.
+    if (!user.isActive) {
+      disconnectNotificationUser(user._id);
+    }
+
     await audit.log({
       actor: req.user,
       action: user.isActive ? "user.activate" : "user.deactivate",
@@ -153,6 +164,36 @@ router.patch(
     });
 
     res.status(200).json(user);
+  }),
+);
+
+// A4 - ADMIN: READ AUDIT LOGS
+router.get(
+  "/audit-logs",
+  asyncHandler(async (req, res) => {
+    const result = auditLogQuerySchema.safeParse(req.query);
+
+    if (!result.success) {
+      return res.status(400).json({
+        err: "Invalid audit log filter.",
+        details: result.error.issues,
+      });
+    }
+
+    const filter = {};
+
+    if (result.data.action) {
+      filter.action = result.data.action;
+    }
+
+    const logs = await AuditLog.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .populate("actorUserId", "firstName lastName email")
+      .select("actorUserId actorRole action targetCollection createdAt")
+      .lean();
+
+    res.status(200).json(logs);
   }),
 );
 

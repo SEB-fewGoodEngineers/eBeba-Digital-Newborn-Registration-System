@@ -28,6 +28,9 @@ import MyBabiesPage from "./pages/registration/MyBabiesPage";
 // A3 - ADMIN: CREATE STAFF USERS
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 
+// A4 - ADMIN: READ AUDIT LOGS
+import AdminAuditLogPage from "./pages/admin/AdminAuditLogPage";
+
 // CONTEXT AND CONSTANTS
 import { ROLES } from "./constants/labels";
 import { useUser } from "./contexts/UserContext";
@@ -141,6 +144,16 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.ADMIN]}>
                 <AdminUsersPage />
+              </RequireRole>
+            }
+          />
+
+          {/* A4 - ADMIN: READ AUDIT LOGS */}
+          <Route
+            path="/admin/audit-logs"
+            element={
+              <RequireRole roles={[ROLES.ADMIN]}>
+                <AdminAuditLogPage />
               </RequireRole>
             }
           />
