@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const DiaryEntry = require("../models/DiaryEntry");
 const {
   verifyToken,
@@ -67,6 +68,42 @@ router.post(
     });
 
     res.status(201).json(entry);
+  }),
+);
+
+// DELETE A DIARY ENTRY
+router.delete(
+  "/:entryId",
+  asyncHandler(async (req, res) => {
+    const { babyId, entryId } = req.params;
+
+    if (!mongoose.isValidObjectId(entryId)) {
+      return res.status(404).json({ err: "Diary entry not found." });
+    }
+
+    const entry = await DiaryEntry.findOne({ _id: entryId, babyId });
+    if (!entry) {
+      return res.status(404).json({ err: "Diary entry not found." });
+    }
+
+    // Security: Server refuses to delete an entry someone else made (403)
+    if (!entry.loggedByUserId.equals(req.user._id)) {
+      return res
+        .status(403)
+        .json({ err: "You do not have permission to delete this entry." });
+    }
+
+    await entry.deleteOne();
+
+    await audit.log({
+      actor: req.user,
+      action: "diary_entry.delete",
+      targetCollection: "diaryEntries",
+      targetDocumentId: entry._id,
+      changes: { before: entry },
+    });
+
+    res.status(204).send();
   }),
 );
 
