@@ -14,6 +14,7 @@ const registrationRouter = require("./controllers/registrations");
 const babiesRouter = require("./controllers/babies");
 const diaryEntriesRouter = require("./controllers/diaryEntries");
 const growthMeasurementsRouter = require("./controllers/growthMeasurements");
+const milestonesRouter = require("./controllers/milestones");
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use(helmet());
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: "100kb" }));
 app.use(mongoSanitize()); // removes $ and . keys, which block NoSQL injection
+app.use("/babies/:babyId/milestones", milestonesRouter);
 if (process.env.NODE_ENV !== "test") app.use(logger("dev"));
 
 app.get("/", (req, res) => {
