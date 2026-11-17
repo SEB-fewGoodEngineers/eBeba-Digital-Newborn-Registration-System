@@ -1,3 +1,4 @@
+// client/src/utils/dates.js
 // Date helpers. The server stores UTC; the browser shows the user's local time.
 
 const pad = (n) => String(n).padStart(2, "0");
@@ -41,5 +42,13 @@ export const formatDateTime = (iso) => {
 export const todayRange = (date = new Date()) => {
   const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+  return { from: start.toISOString(), to: end.toISOString() };
+};
+
+// The user's local day range for ANY given date object or string
+export const dayRange = (dateInput = new Date()) => {
+  const d = typeof dateInput === "string" ? new Date(`${dateInput}T00:00`) : dateInput;
+  const start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
   return { from: start.toISOString(), to: end.toISOString() };
 };
