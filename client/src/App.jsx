@@ -1,4 +1,3 @@
-
 import { Navigate, Route, Routes } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
 
@@ -17,6 +16,7 @@ import HospitalBirthListPage from "./pages/hospital/HospitalBirthListPage";
 import RecordBirthPage from "./pages/hospital/RecordBirthPage";
 import CswCasesPage from "./pages/csw/CswCasesPage";
 import ApplyPage from "./pages/registration/ApplyPage";
+import QueuePage from "./pages/moi/QueuePage";
 import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
 
 // STORY 1.2 - LINK MY BABY
@@ -26,11 +26,6 @@ import MyBabiesPage from "./pages/registration/MyBabiesPage";
 // CONTEXT AND CONSTANTS
 import { ROLES } from "./constants/labels";
 import { useUser } from "./contexts/UserContext";
-<<<<<<< HEAD
-import ApplyPage from "./pages/registration/ApplyPage";
-import QueuePage from "./pages/moi/QueuePage";
-=======
->>>>>>> cbcf2a41dd59f086a9c9f5aecad4e7ff0a5b7412
 
 export default function App() {
   const { user, isLoading } = useUser();
@@ -117,7 +112,6 @@ export default function App() {
           />
 
           {/* STORY 4.1 - MEDICAL RECORDS */}
-
           <Route
             path="/babies/:babyId/medical-records"
             element={
@@ -135,7 +129,8 @@ export default function App() {
               </RequireRole>
             }
           />
-<<<<<<< HEAD
+
+          {/* STORY 2.2 - MOI QUEUE */}
           <Route
             path="/moi/queue"
             element={
@@ -144,10 +139,8 @@ export default function App() {
               </RequireRole>
             }
           />
-=======
 
           <Route path="*" element={<NotFoundPage />} />
->>>>>>> cbcf2a41dd59f086a9c9f5aecad4e7ff0a5b7412
         </Routes>
       </Box>
     </>
