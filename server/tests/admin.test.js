@@ -7,6 +7,7 @@ const {
   createStaffSchema,
   updateStaffStatusSchema,
   isStaffInstitutionMatch,
+  auditLogQuerySchema,
 } = require("../validators/admin");
 
 const { ROLES, INSTITUTION_TYPES } = require("../constants");
@@ -113,5 +114,33 @@ test("rejects a non-boolean account status", () => {
     isActive: "false",
   });
 
+  assert.equal(result.success, false);
+});
+
+// A4 - AUDIT LOG QUERY VALIDATION
+
+test("audit logs accept an empty filter", () => {
+  const result = auditLogQuerySchema.safeParse({});
+  assert.equal(result.success, true);
+});
+
+test("audit logs accept a valid action", () => {
+  const result = auditLogQuerySchema.safeParse({
+    action: "user.create",
+  });
+  assert.equal(result.success, true);
+});
+
+test("audit logs reject an empty action", () => {
+  const result = auditLogQuerySchema.safeParse({
+    action: "",
+  });
+  assert.equal(result.success, false);
+});
+
+test("audit logs reject an invalid action type", () => {
+  const result = auditLogQuerySchema.safeParse({
+    action: { $ne: "user.create" },
+  });
   assert.equal(result.success, false);
 });
