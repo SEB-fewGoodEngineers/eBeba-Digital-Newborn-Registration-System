@@ -23,6 +23,9 @@ import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
 import LinkBabyPage from "./pages/registration/LinkBabyPage";
 import MyBabiesPage from "./pages/registration/MyBabiesPage";
 
+// A3 - ADMIN: CREATE STAFF USERS
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+
 // CONTEXT AND CONSTANTS
 import { ROLES } from "./constants/labels";
 import { useUser } from "./contexts/UserContext";
@@ -112,7 +115,6 @@ export default function App() {
           />
 
           {/* STORY 4.1 - MEDICAL RECORDS */}
-
           <Route
             path="/babies/:babyId/medical-records"
             element={
@@ -127,6 +129,16 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.PARENT]}>
                 <ApplyPage />
+              </RequireRole>
+            }
+          />
+
+          {/* A3 - ADMIN: CREATE STAFF USERS */}
+          <Route
+            path="/admin/users"
+            element={
+              <RequireRole roles={[ROLES.ADMIN]}>
+                <AdminUsersPage />
               </RequireRole>
             }
           />
