@@ -17,6 +17,7 @@ import HospitalBirthListPage from "./pages/hospital/HospitalBirthListPage";
 import RecordBirthPage from "./pages/hospital/RecordBirthPage";
 import CswCasesPage from "./pages/csw/CswCasesPage";
 import ApplyPage from "./pages/registration/ApplyPage";
+import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
 
 // STORY 1.2 - LINK MY BABY
 import LinkBabyPage from "./pages/registration/LinkBabyPage";
@@ -106,6 +107,17 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.PARENT]}>
                 <MyBabiesPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 4.1 - MEDICAL RECORDS */}
+
+          <Route
+            path="/babies/:babyId/medical-records"
+            element={
+              <RequireRole roles={[ROLES.PARENT, ROLES.PEDIATRICIAN]}>
+                <MedicalRecordsPage />
               </RequireRole>
             }
           />
