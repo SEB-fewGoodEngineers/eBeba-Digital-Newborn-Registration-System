@@ -7,7 +7,13 @@ import {
   Chip,
   CircularProgress,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
+  IconButton,
   List,
   ListItem,
   ListItemText,
@@ -20,6 +26,7 @@ import {
 import {
   createDiaryEntry,
   createGrowthMeasurement,
+  deleteDiaryEntry,
   getDiaryEntries,
   getGrowthMeasurements,
 } from "../../services/careService";
@@ -116,6 +123,10 @@ export default function CarePage() {
   const [diaryFormError, setDiaryFormError] = useState("");
   const [diaryFieldErrors, setDiaryFieldErrors] = useState({});
   const [isSavingDiary, setIsSavingDiary] = useState(false);
+
+  // Delete dialog state
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Growth state
   const [measurements, setMeasurements] = useState([]);
@@ -228,6 +239,22 @@ export default function CarePage() {
       );
     } finally {
       setIsSavingDiary(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
+    try {
+      await deleteDiaryEntry(babyId, deleteTargetId);
+      const { from, to } = todayRange();
+      const updated = await getDiaryEntries(babyId, from, to);
+      setEntries(updated);
+      setDeleteTargetId(null);
+    } catch (err) {
+      setDiaryLoadError(err.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -456,7 +483,20 @@ export default function CarePage() {
               ].filter(Boolean);
 
               return (
-                <ListItem key={entry._id} divider disableGutters>
+                <ListItem
+                  key={entry._id}
+                  divider
+                  disableGutters
+                  secondaryAction={
+                    <IconButton
+                      edge="end"
+                      aria-label="delete"
+                      onClick={() => setDeleteTargetId(entry._id)}
+                    >
+                      ✕
+                    </IconButton>
+                  }
+                >
                   <ListItemText
                     primary={
                       <Stack direction="row" spacing={1} alignItems="center">
@@ -481,6 +521,37 @@ export default function CarePage() {
           </List>
         )}
       </Paper>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={Boolean(deleteTargetId)}
+        onClose={() => setDeleteTargetId(null)}
+      >
+        <DialogTitle>Delete entry</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Delete this entry? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteTargetId(null)}
+            disabled={isDeleting}
+            type="button"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            disabled={isDeleting}
+            type="button"
+          >
+            {isDeleting ? "Deleting…" : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Growth Section */}
       <Paper sx={{ p: 3 }}>
