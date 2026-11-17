@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
+import PrecheckPanel from "../../components/PrecheckPanel/PrecheckPanel";
+import { runPrecheck, decideFlag } from "../../services/aiSuggestionService";
 import {
   approveRegistration as approveRegistrationApi,
   getRegistrationReview,
@@ -86,6 +88,11 @@ export default function ReviewPage() {
   const [decisionError, setDecisionError] = useState("");
   const [isSubmittingDecision, setIsSubmittingDecision] = useState(false);
   const [decisionDone, setDecisionDone] = useState(null); // { type, status }
+  const [suggestion, setSuggestion] = useState(null); // latest aiSuggestions doc
+  const [isRunningPrecheck, setIsRunningPrecheck] = useState(false);
+  const [precheckError, setPrecheckError] = useState("");
+  const [isDecidingFlag, setIsDecidingFlag] = useState(false);
+
   useEffect(() => {
     let ignore = false;
     getRegistrationReview(registrationId)
@@ -124,6 +131,47 @@ export default function ReviewPage() {
       setApproveError(err.message);
     } finally {
       setIsApproving(false);
+    }
+  };
+
+  const handleRunPrecheck = async () => {
+    setPrecheckError("");
+    setIsRunningPrecheck(true);
+    try {
+      const result = await runPrecheck(registrationId);
+      setSuggestion(result);
+    } catch (err) {
+      setPrecheckError(err.message);
+    } finally {
+      setIsRunningPrecheck(false);
+    }
+  };
+
+  const handleDecideFlag = async (flagId, decision) => {
+    setPrecheckError("");
+    setIsDecidingFlag(true);
+    try {
+      const updated = await decideFlag(suggestion._id, flagId, decision);
+      // Prefer the server's response if it returns the updated suggestion.
+      // If it returns only the flag, merge locally.
+      if (updated && updated.flags) {
+        setSuggestion(updated);
+      } else {
+        setSuggestion((prev) =>
+          prev
+            ? {
+                ...prev,
+                flags: prev.flags.map((f) =>
+                  f._id === flagId ? { ...f, decision } : f,
+                ),
+              }
+            : prev,
+        );
+      }
+    } catch (err) {
+      setPrecheckError(err.message);
+    } finally {
+      setIsDecidingFlag(false);
     }
   };
 
@@ -195,7 +243,7 @@ export default function ReviewPage() {
   const motherLast = baby.mother?.lastName;
   const fatherLast = baby.father?.lastName;
   const canDecide = registration.status === "pending";
-  
+
   return (
     <Box sx={{ maxWidth: 1200, mx: "auto", mt: 4, px: 2 }}>
       <Stack
@@ -416,6 +464,15 @@ export default function ReviewPage() {
           />
         </CardContent>
       </Card>
+
+      <PrecheckPanel
+        suggestion={suggestion}
+        onRun={handleRunPrecheck}
+        onDecide={handleDecideFlag}
+        isRunning={isRunningPrecheck}
+        isDeciding={isDecidingFlag}
+        error={precheckError}
+      />
 
       <Dialog
         open={approveOpen}
