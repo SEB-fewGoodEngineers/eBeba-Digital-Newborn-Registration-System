@@ -11,6 +11,11 @@ export const createDiaryEntry = (babyId, entry) =>
     body: entry,
   });
 
+export const deleteDiaryEntry = (babyId, entryId) =>
+  api(`/babies/${babyId}/diary-entries/${entryId}`, {
+    method: "DELETE",
+  });
+
 export const getGrowthMeasurements = (babyId) =>
   api(`/babies/${babyId}/growth-measurements`);
 

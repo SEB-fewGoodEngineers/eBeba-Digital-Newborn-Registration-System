@@ -1,5 +1,7 @@
+
 import { Navigate, Route, Routes } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
+
 // COMPONENTS
 import RequireRole from "./components/RequireRole/RequireRole";
 import NavBar from "./components/NavBar/NavBar";
@@ -13,12 +15,22 @@ import SignUpPage from "./pages/auth/SignUpPage";
 import CarePage from "./pages/care/CarePage";
 import HospitalBirthListPage from "./pages/hospital/HospitalBirthListPage";
 import RecordBirthPage from "./pages/hospital/RecordBirthPage";
+import CswCasesPage from "./pages/csw/CswCasesPage";
+import ApplyPage from "./pages/registration/ApplyPage";
+import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
+
+// STORY 1.2 - LINK MY BABY
+import LinkBabyPage from "./pages/registration/LinkBabyPage";
+import MyBabiesPage from "./pages/registration/MyBabiesPage";
 
 // CONTEXT AND CONSTANTS
 import { ROLES } from "./constants/labels";
 import { useUser } from "./contexts/UserContext";
+<<<<<<< HEAD
 import ApplyPage from "./pages/registration/ApplyPage";
 import QueuePage from "./pages/moi/QueuePage";
+=======
+>>>>>>> cbcf2a41dd59f086a9c9f5aecad4e7ff0a5b7412
 
 export default function App() {
   const { user, isLoading } = useUser();
@@ -38,13 +50,24 @@ export default function App() {
       <Box component="main">
         <Routes>
           <Route path="/" element={user ? <HomePage /> : <LandingPage />} />
+
           <Route
             path="/sign-in"
             element={user ? <Navigate to="/" replace /> : <SignInPage />}
           />
+
           <Route
             path="/sign-up"
             element={user ? <Navigate to="/" replace /> : <SignUpPage />}
+          />
+
+          <Route
+            path="/csw-cases"
+            element={
+              <RequireRole roles={[ROLES.CSW_STAFF]}>
+                <CswCasesPage />
+              </RequireRole>
+            }
           />
 
           <Route
@@ -64,6 +87,7 @@ export default function App() {
               </RequireRole>
             }
           />
+
           <Route
             path="/hospital/babies/new"
             element={
@@ -72,7 +96,37 @@ export default function App() {
               </RequireRole>
             }
           />
-          <Route path="*" element={<NotFoundPage />} />
+
+          {/* STORY 1.2 - LINK MY BABY */}
+          <Route
+            path="/babies/link"
+            element={
+              <RequireRole roles={[ROLES.PARENT]}>
+                <LinkBabyPage />
+              </RequireRole>
+            }
+          />
+
+          <Route
+            path="/babies/mine"
+            element={
+              <RequireRole roles={[ROLES.PARENT]}>
+                <MyBabiesPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 4.1 - MEDICAL RECORDS */}
+
+          <Route
+            path="/babies/:babyId/medical-records"
+            element={
+              <RequireRole roles={[ROLES.PARENT, ROLES.PEDIATRICIAN]}>
+                <MedicalRecordsPage />
+              </RequireRole>
+            }
+          />
+
           <Route
             path="/registration/apply"
             element={
@@ -81,6 +135,7 @@ export default function App() {
               </RequireRole>
             }
           />
+<<<<<<< HEAD
           <Route
             path="/moi/queue"
             element={
@@ -89,6 +144,10 @@ export default function App() {
               </RequireRole>
             }
           />
+=======
+
+          <Route path="*" element={<NotFoundPage />} />
+>>>>>>> cbcf2a41dd59f086a9c9f5aecad4e7ff0a5b7412
         </Routes>
       </Box>
     </>
