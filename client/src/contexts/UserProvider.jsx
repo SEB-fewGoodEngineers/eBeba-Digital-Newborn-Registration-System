@@ -1,33 +1,54 @@
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { UserContext } from "./UserContext";
 import { getToken, SESSION_ENDED_EVENT } from "../services/api";
 import { getMe, signOut as removeSession } from "../services/authService";
+import {
+  connectNotificationSocket,
+  disconnectNotificationSocket,
+} from "../services/socket";
 
 export default function UserProvider({ children }) {
   const [user, setUser] = useState(null);
-  // Only "loading" if there is a token to check
   const [isLoading, setIsLoading] = useState(() => Boolean(getToken()));
 
-  // On page load: ask the server who we are. This also checks that the token is still valid.
-  // (The template decoded the token with atob, which breaks names like "Vuković"
-  // and kept showing users as signed in after their token had expired.)
+  // Restore an existing session when the page loads.
   useEffect(() => {
     if (!getToken()) return;
+
     getMe()
       .then((me) => setUser(me))
       .catch(() => setUser(null))
       .finally(() => setIsLoading(false));
   }, []);
 
-  // api.js sends this event when the server answers 401 (expired or deactivated)
+  // Handle expired or deactivated sessions.
   useEffect(() => {
     const handleSessionEnded = () => setUser(null);
+
     window.addEventListener(SESSION_ENDED_EVENT, handleSessionEnded);
+
     return () =>
       window.removeEventListener(SESSION_ENDED_EVENT, handleSessionEnded);
   }, []);
 
+  // Keep the Socket.io connection aligned with the user session.
+  useEffect(() => {
+    if (!user || !getToken()) {
+      disconnectNotificationSocket();
+      return;
+    }
+
+    connectNotificationSocket();
+
+    return () => {
+      disconnectNotificationSocket();
+    };
+  }, [user]);
+
+  // End both the HTTP session and the live connection.
   const signOut = useCallback(() => {
+    disconnectNotificationSocket();
     removeSession();
     setUser(null);
   }, []);
@@ -37,5 +58,9 @@ export default function UserProvider({ children }) {
     [user, isLoading, signOut],
   );
 
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+  return (
+    <UserContext.Provider value={value}>
+      {children}
+    </UserContext.Provider>
+  );
 }
