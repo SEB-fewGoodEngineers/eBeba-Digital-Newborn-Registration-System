@@ -75,10 +75,14 @@ export default function AdminUsersPage() {
         }
       })
       .catch((err) => {
-        if (!ignore) setError(err.message);
+        if (!ignore) {
+          setError(err.message);
+        }
       })
       .finally(() => {
-        if (!ignore) setLoading(false);
+        if (!ignore) {
+          setLoading(false);
+        }
       });
 
     return () => {
@@ -212,7 +216,12 @@ export default function AdminUsersPage() {
               type="password"
               value={form.password}
               onChange={handleChange}
-              inputProps={{ minLength: 8, maxLength: 72 }}
+              slotProps={{
+                htmlInput: {
+                  minLength: 8,
+                  maxLength: 72,
+                },
+              }}
               required
             />
 

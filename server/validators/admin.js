@@ -22,8 +22,14 @@ const isStaffInstitutionMatch = (role, institution) =>
     ROLE_INSTITUTION_TYPE[role] === institution.type,
   );
 
+// A4 - ADMIN: READ AUDIT LOGS
+const auditLogQuerySchema = z.object({
+  action: z.string().trim().min(1).max(100).optional(),
+});
+
 module.exports = {
   createStaffSchema,
   updateStaffStatusSchema,
   isStaffInstitutionMatch,
+  auditLogQuerySchema,
 };
