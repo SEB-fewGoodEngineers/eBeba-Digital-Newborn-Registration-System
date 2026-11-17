@@ -1,8 +1,5 @@
-// AUDIT SERVICE – STUB
-// Owner: Auth service (Epic 1), task A2.
-// The function name and arguments are final: call it now in your stories.
-// TODO A2: save an AuditLog document instead of writing to the console.
-//          If saving fails, log the error and do NOT throw: the user's action must still work.
+
+const AuditLog = require("../../models/AuditLog");
 
 /**
  * @param {object} entry
@@ -12,10 +9,25 @@
  * @param {*}      entry.targetDocumentId  the document's _id
  * @param {object} [entry.changes]         { before, after }
  */
-const log = async ({ actor, action, targetCollection, targetDocumentId }) => {
-  console.log(
-    `[audit stub] ${actor?.role} ${actor?._id} ${action} ${targetCollection}/${targetDocumentId}`,
-  );
+const log = async ({
+  actor,
+  action,
+  targetCollection,
+  targetDocumentId,
+  changes,
+}) => {
+  try {
+    await AuditLog.create({
+      actorUserId: actor._id,
+      actorRole: actor.role,
+      action,
+      targetCollection,
+      targetDocumentId,
+      changes,
+    });
+  } catch (err) {
+    console.error("Failed to save audit log:", err);
+  }
 };
 
 module.exports = { log };
