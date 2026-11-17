@@ -62,3 +62,38 @@ test("update schema has no babyId (a resubmit cannot move the baby)", () => {
   assert.strictEqual(result.success, true);
   assert.strictEqual(result.data.babyId, undefined);
 });
+
+const { listRegistrationsQuerySchema } = require("../validators/registrations");
+
+test("list query: defaults to pending when no status is given", () => {
+  const result = listRegistrationsQuerySchema.safeParse({});
+  assert.strictEqual(result.success, true);
+  assert.strictEqual(result.data.status, "pending");
+});
+
+test("list query: accepts a known status", () => {
+  const result = listRegistrationsQuerySchema.safeParse({ status: "approved" });
+  assert.strictEqual(result.success, true);
+  assert.strictEqual(result.data.status, "approved");
+});
+
+test("list query: rejects an unknown status (blocks $ne and friends)", () => {
+  for (const bad of ["all", "$ne", "pending; DROP", "", "Pending"]) {
+    const result = listRegistrationsQuerySchema.safeParse({ status: bad });
+    assert.strictEqual(
+      result.success,
+      false,
+      `should reject status=${JSON.stringify(bad)}`,
+    );
+  }
+});
+
+test("list query: strips extra query params", () => {
+  const result = listRegistrationsQuerySchema.safeParse({
+    status: "pending",
+    admin: "true",
+    submittedByUserId: "someone-else",
+  });
+  assert.strictEqual(result.success, true);
+  assert.deepStrictEqual(Object.keys(result.data), ["status"]);
+});

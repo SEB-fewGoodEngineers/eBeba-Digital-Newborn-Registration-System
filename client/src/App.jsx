@@ -18,6 +18,7 @@ import RecordBirthPage from "./pages/hospital/RecordBirthPage";
 import { ROLES } from "./constants/labels";
 import { useUser } from "./contexts/UserContext";
 import ApplyPage from "./pages/registration/ApplyPage";
+import QueuePage from "./pages/moi/QueuePage";
 
 export default function App() {
   const { user, isLoading } = useUser();
@@ -77,6 +78,14 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.PARENT]}>
                 <ApplyPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/moi/queue"
+            element={
+              <RequireRole roles={[ROLES.MOI_STAFF]}>
+                <QueuePage />
               </RequireRole>
             }
           />

@@ -1,5 +1,6 @@
 const { z } = require("zod");
 const mongoose = require("mongoose");
+const { REGISTRATION_STATUS } = require("../constants");
 
 // Reusable text rule: trimmed, non-empty, max length. { error } = friendly message.
 const text = (label, max) =>
@@ -9,7 +10,6 @@ const text = (label, max) =>
     .min(1, `${label} is required.`)
     .max(max, `${label} is too long.`);
 
-// babyId must be a valid Mongo ObjectId string
 const babyId = z
   .string({ error: "Please choose a baby." })
   .refine((v) => mongoose.isValidObjectId(v), "Please choose a baby.");
@@ -22,8 +22,6 @@ const createRegistrationSchema = z.object({
   municipality: text("Municipality", 100),
 });
 
-// PUT body when the parent fixes a returned application.
-// Note: babyId is NOT editable. A resubmit does not move the baby.
 const updateRegistrationSchema = z.object({
   proposedFirstName: text("First name", 50),
   proposedLastName: text("Last name", 50),
@@ -31,4 +29,18 @@ const updateRegistrationSchema = z.object({
   municipality: text("Municipality", 100),
 });
 
-module.exports = { createRegistrationSchema, updateRegistrationSchema };
+// NEW: query for GET /registrations (MoI queue).
+// Only "status" is allowed, must be a known REGISTRATION_STATUS value,
+// and defaults to "pending" when omitted.
+const listRegistrationsQuerySchema = z.object({
+  status: z
+    .enum(Object.values(REGISTRATION_STATUS), { error: "Unknown status." })
+    .optional()
+    .default(REGISTRATION_STATUS.PENDING),
+});
+
+module.exports = {
+  createRegistrationSchema,
+  updateRegistrationSchema,
+  listRegistrationsQuerySchema,
+};
