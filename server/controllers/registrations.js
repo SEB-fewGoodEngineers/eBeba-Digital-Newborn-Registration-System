@@ -8,6 +8,10 @@ const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
 const {
+  approveRegistration: approveRegistrationService,
+} = require("../services/workflow");
+
+const {
   createRegistrationSchema,
   updateRegistrationSchema,
   listRegistrationsQuerySchema, // NEW
@@ -188,10 +192,6 @@ router.get(
   verifyToken,
   requireRole(ROLES.MOI_STAFF),
   asyncHandler(async (req, res) => {
-    const {
-      approveRegistration: approveRegistrationService, // rename to avoid name clash with the controller
-    } = require("../services/workflow");
-
     const { registrationId } = req.params;
     if (!mongoose.isValidObjectId(registrationId)) {
       return res.status(404).json({ err: "Application not found." });
@@ -325,7 +325,6 @@ router.post(
 
     // Fetch the certificate that approveRegistration created (upserted).
     // This is the read side; the write side owns the fields.
-    const Certificate = require("../models/Certificate");
     const certificate = await Certificate.findOne({
       babyId: registration.babyId,
     })
