@@ -43,12 +43,11 @@ app.get("/", (req, res) => {
 
 // Registracija ruti u app.js:
 app.use("/", aiSuggestionsRouter); // Zato što ima prefikse /registrations i /ai-suggestions
-app.use("/insurance-records", insuranceRecordsRouter);
+app.use("/insurance-records", require("./controllers/insuranceRecords"));
 
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
-app.use("/admin", adminRouter);
-app.use("/csw-cases", cswCasesRouter);
+app.use("/csw-cases", require("./controllers/cswCases"));
 app.use("/registrations", registrationRouter);
 app.use("/babies", babiesRouter);
 app.use("/babies/:babyId/diary-entries", diaryEntriesRouter);
