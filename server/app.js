@@ -47,6 +47,7 @@ app.use("/insurance-records", require("./controllers/insuranceRecords"));
 
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
+app.use("/admin", adminRouter);
 app.use("/csw-cases", require("./controllers/cswCases"));
 app.use("/registrations", registrationRouter);
 app.use("/babies", babiesRouter);
