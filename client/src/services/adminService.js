@@ -16,3 +16,10 @@ export const updateUserStatus = (userId, isActive) =>
     method: "PATCH",
     body: { isActive },
   });
+
+export const getAdminAuditLogs = (action = "") =>
+  api(
+    action
+      ? `/admin/audit-logs?action=${encodeURIComponent(action)}`
+      : "/admin/audit-logs",
+  );
