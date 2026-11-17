@@ -17,7 +17,9 @@ import HospitalBirthListPage from "./pages/hospital/HospitalBirthListPage";
 import RecordBirthPage from "./pages/hospital/RecordBirthPage";
 import CswCasesPage from "./pages/csw/CswCasesPage";
 import ApplyPage from "./pages/registration/ApplyPage";
+import QueuePage from "./pages/moi/QueuePage";
 import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
+import ReviewPage from "./pages/moi/ReviewPage";
 
 // STORY 1.2 - LINK MY BABY
 import LinkBabyPage from "./pages/registration/LinkBabyPage";
@@ -139,6 +141,25 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.ADMIN]}>
                 <AdminUsersPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 2.2 - MOI QUEUE */}
+          <Route
+            path="/moi/queue"
+            element={
+              <RequireRole roles={[ROLES.MOI_STAFF]}>
+                <QueuePage />
+              </RequireRole>
+            }
+          />
+
+          <Route
+            path="/moi/review/:registrationId"
+            element={
+              <RequireRole roles={[ROLES.MOI_STAFF]}>
+                <ReviewPage />
               </RequireRole>
             }
           />

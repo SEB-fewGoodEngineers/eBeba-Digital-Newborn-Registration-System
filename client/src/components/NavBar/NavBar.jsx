@@ -28,6 +28,12 @@ export default function NavBar() {
 
         {user ? (
           <>
+            {user.role === ROLES.MOI_STAFF && (
+              <Button color="inherit" component={RouterLink} to="/moi/queue">
+                MoI queue
+              </Button>
+            )}
+
             <Box
               component="span"
               sx={{ display: { xs: "none", sm: "inline" }, mr: 1 }}
