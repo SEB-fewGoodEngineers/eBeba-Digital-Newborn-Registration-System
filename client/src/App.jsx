@@ -1,4 +1,3 @@
-
 import { Navigate, Route, Routes } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
 
@@ -19,6 +18,7 @@ import CswCasesPage from "./pages/csw/CswCasesPage";
 import ApplyPage from "./pages/registration/ApplyPage";
 import QueuePage from "./pages/moi/QueuePage";
 import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
+import ReviewPage from "./pages/moi/ReviewPage";
 
 // STORY 1.2 - LINK MY BABY
 import LinkBabyPage from "./pages/registration/LinkBabyPage";
@@ -138,6 +138,15 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.MOI_STAFF]}>
                 <QueuePage />
+              </RequireRole>
+            }
+          />
+
+          <Route
+            path="/moi/review/:registrationId"
+            element={
+              <RequireRole roles={[ROLES.MOI_STAFF]}>
+                <ReviewPage />
               </RequireRole>
             }
           />

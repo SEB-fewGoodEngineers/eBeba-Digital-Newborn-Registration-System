@@ -183,4 +183,105 @@ router.get(
   }),
 );
 
+// REVIEW ONE APPLICATION WITH ITS BIRTH RECORD (moi_staff only).
+// One query, one audit line. No JMBG digits leave the server.
+router.get(
+  "/:registrationId/review",
+  verifyToken,
+  requireRole(ROLES.MOI_STAFF),
+  asyncHandler(async (req, res) => {
+    const { registrationId } = req.params;
+    if (!mongoose.isValidObjectId(registrationId)) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    const registration = await Registration.findById(registrationId)
+      .select(
+        "proposedFirstName proposedLastName residentialAddress municipality " +
+          "status reviewerNotes statusHistory createdAt babyId submittedByUserId",
+      )
+      .populate({
+        path: "babyId",
+        select:
+          "birthRecordNumber gender birthDateTime placeOfBirth municipalityOfBirth " +
+          "birthWeightGrams birthLengthCm familyType mother father " +
+          "hospitalId firstName lastName jmbg registeredAt",
+        populate: { path: "hospitalId", select: "name municipality" },
+      })
+      .populate({
+        path: "submittedByUserId",
+        select: "firstName lastName email role",
+      })
+      .lean();
+
+    if (!registration || !registration.babyId) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    // Audit the read. Who saw which baby — no PII in the audit.
+    await audit.log({
+      actor: req.user,
+      action: "registration.review",
+      targetCollection: "registrations",
+      targetDocumentId: registration._id,
+      changes: { after: { babyId: registration.babyId._id } },
+    });
+
+    // Redact JMBGs before sending. The officer does not need the digits to
+    // decide; the "is there a JMBG on file" boolean is enough.
+    const redactParent = (p) =>
+      p
+        ? {
+            firstName: p.firstName,
+            lastName: p.lastName,
+            maidenName: p.maidenName,
+            dateOfBirth: p.dateOfBirth,
+            hasJmbg: Boolean(p.jmbg),
+            citizenship: p.citizenship,
+            address: p.address,
+            email: p.email,
+          }
+        : null;
+
+    res.status(200).json({
+      registration: {
+        _id: registration._id,
+        proposedFirstName: registration.proposedFirstName,
+        proposedLastName: registration.proposedLastName,
+        residentialAddress: registration.residentialAddress,
+        municipality: registration.municipality,
+        status: registration.status,
+        reviewerNotes: registration.reviewerNotes,
+        statusHistory: registration.statusHistory,
+        createdAt: registration.createdAt,
+      },
+      applicant: {
+        firstName: registration.submittedByUserId?.firstName,
+        lastName: registration.submittedByUserId?.lastName,
+        email: registration.submittedByUserId?.email,
+        role: registration.submittedByUserId?.role,
+      },
+      baby: {
+        _id: registration.babyId._id,
+        birthRecordNumber: registration.babyId.birthRecordNumber,
+        gender: registration.babyId.gender,
+        birthDateTime: registration.babyId.birthDateTime,
+        placeOfBirth: registration.babyId.placeOfBirth,
+        municipalityOfBirth: registration.babyId.municipalityOfBirth,
+        birthWeightGrams: registration.babyId.birthWeightGrams,
+        birthLengthCm: registration.babyId.birthLengthCm,
+        familyType: registration.babyId.familyType,
+        mother: redactParent(registration.babyId.mother),
+        father: redactParent(registration.babyId.father),
+        hospital: registration.babyId.hospitalId
+          ? {
+              name: registration.babyId.hospitalId.name,
+              municipality: registration.babyId.hospitalId.municipality,
+            }
+          : null,
+      },
+    });
+  }),
+);
+
 module.exports = router;
