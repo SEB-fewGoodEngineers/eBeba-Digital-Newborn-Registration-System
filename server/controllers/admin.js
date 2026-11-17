@@ -10,6 +10,9 @@ const { verifyToken, requireRole } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
+const {
+  disconnectNotificationUser,
+} = require("../services/notifications");
 
 const {
   createStaffSchema,
@@ -140,6 +143,11 @@ router.patch(
 
     user.isActive = req.body.isActive;
     await user.save();
+
+    // Disconnect active sockets when the account is deactivated.
+    if (!user.isActive) {
+      disconnectNotificationUser(user._id);
+    }
 
     await audit.log({
       actor: req.user,

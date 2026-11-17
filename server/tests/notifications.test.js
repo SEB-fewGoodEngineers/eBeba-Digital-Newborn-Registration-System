@@ -3,10 +3,12 @@ const { test, afterEach } = require("node:test");
 const assert = require("node:assert/strict");
 
 const Notification = require("../models/Notification");
+
 const {
   notify,
   notifyMany,
   setSocketServer,
+  disconnectNotificationUser,
 } = require("../services/notifications");
 
 const USER_ID = "507f1f77bcf86cd799439011";
@@ -183,4 +185,130 @@ test("notification model rejects a missing message", () => {
 
   assert.ok(error);
   assert.ok(error.errors.message);
+});
+
+test("disconnects only the specified user's socket room", () => {
+  const calls = [];
+
+  setSocketServer({
+    in(room) {
+      return {
+        disconnectSockets(closeConnection) {
+          calls.push({ room, closeConnection });
+        },
+      };
+    },
+  });
+
+  disconnectNotificationUser(USER_ID);
+
+  assert.deepEqual(calls, [
+    {
+      room: `user:${USER_ID}`,
+      closeConnection: true,
+    },
+  ]);
+});
+
+test("disconnect is safe when Socket.io is not initialized", () => {
+  setSocketServer(null);
+
+  assert.doesNotThrow(() => {
+    disconnectNotificationUser(USER_ID);
+  });
+});
+
+
+test("medical details are excluded from saved and live notifications", async () => {
+  let savedData = null;
+  let liveData = null;
+
+  Notification.create = async (data) => {
+    savedData = data;
+
+    return {
+      _id: NOTIFICATION_ID,
+      ...data,
+      createdAt: new Date("2026-11-17T10:00:00Z"),
+    };
+  };
+
+  setSocketServer({
+    to(room) {
+      assert.equal(room, `user:${USER_ID}`);
+
+      return {
+        emit(event, payload) {
+          assert.equal(event, "notification:new");
+          liveData = payload;
+        },
+      };
+    },
+  });
+
+  await notify(USER_ID, {
+    type: "baby.pediatrician_assigned",
+    title: "Allergy: penicillin",
+    message: "Medical diagnosis: sensitive test information",
+    link: "/dashboard",
+    babyId: BABY_ID,
+  });
+
+  assert.equal(savedData.title, "Account update");
+  assert.equal(
+    savedData.message,
+    "An update is available. Sign in to your eBeba account for details.",
+  );
+
+  assert.equal(liveData.title, savedData.title);
+  assert.equal(liveData.message, savedData.message);
+
+  for (const data of [savedData, liveData]) {
+    const text = JSON.stringify(data);
+
+    assert.doesNotMatch(text, /penicillin/i);
+    assert.doesNotMatch(text, /medical diagnosis/i);
+    assert.doesNotMatch(text, /sensitive test information/i);
+  }
+});
+
+test("rejects unknown notification types", async () => {
+  let saveCalled = false;
+
+  Notification.create = async () => {
+    saveCalled = true;
+    return {};
+  };
+
+  await assert.rejects(
+    notify(USER_ID, {
+      type: "medical.details",
+      title: "Medical results",
+      message: "Confidential information",
+    }),
+    /Unknown notification type/,
+  );
+
+  assert.equal(saveCalled, false);
+});
+
+test("rejects unapproved notification links", async () => {
+  let saveCalled = false;
+
+  Notification.create = async () => {
+    saveCalled = true;
+    return {};
+  };
+
+  await assert.rejects(
+    notify(USER_ID, {
+      type: "registration.approved",
+      title: "Registration approved",
+      message: "Your application has been approved.",
+      link: "/medical-records/private",
+    }),
+    /Notification link is not allowed/,
+  );
+
+  assert.equal(saveCalled, false);
 });

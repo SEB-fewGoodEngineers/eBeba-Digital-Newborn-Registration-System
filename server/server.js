@@ -7,12 +7,13 @@ dotenv.config();
 
 const http = require("http");
 const mongoose = require("mongoose");
-const jwt = require("jsonwebtoken");
 const { Server } = require("socket.io");
 
 const app = require("./app");
-const User = require("./models/User");
 const { setSocketServer } = require("./services/notifications");
+const {
+  authenticateNotificationSocket,
+} = require("./services/notifications/socketAuth");
 
 // Stop early if a required setting is missing.
 for (const key of ["MONGODB_URI", "JWT_SECRET"]) {
@@ -34,7 +35,6 @@ const allowedOrigins = (
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-// Socket.io uses the same HTTP server as Express.
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -46,43 +46,14 @@ const io = new Server(server, {
   },
 });
 
-// Authenticate every new Socket.io connection.
-io.use(async (socket, next) => {
-  try {
-    const token = socket.handshake.auth?.token;
+// Authenticate every Socket.io connection before allowing access.
+io.use(authenticateNotificationSocket);
 
-    if (typeof token !== "string" || !token) {
-      return next(new Error("Authentication required."));
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded?.payload?._id;
-
-    if (!mongoose.isValidObjectId(userId)) {
-      return next(new Error("Authentication required."));
-    }
-
-    const user = await User.findById(userId);
-
-    if (!user || !user.isActive) {
-      return next(new Error("Authentication required."));
-    }
-
-    socket.data.userId = String(user._id);
-    return next();
-  } catch {
-    // Never expose tokens or authentication details.
-    console.error("Socket authentication failed.");
-    return next(new Error("Authentication required."));
-  }
-});
-
-// Users can join only their own server-assigned room.
+// Room membership is assigned exclusively by the server.
 io.on("connection", (socket) => {
   socket.join(`user:${socket.data.userId}`);
 });
 
-// Allow the notification service to deliver live events.
 setSocketServer(io);
 
 mongoose

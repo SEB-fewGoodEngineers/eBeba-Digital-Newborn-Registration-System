@@ -1,45 +1,61 @@
-// NOTIFICATIONS SERVICE – STUB
-// Owner: Notifications service (Epic 4), tasks N1–N3.
-// The function name and arguments are final: call it now in your stories.
-// TODO N1: save a Notification document and send it live with Socket.io.
-// Rule: messages never contain a JMBG or medical details.
-
 
 const Notification = require("../../models/Notification");
+const { getNotificationTemplate } = require("./templates");
 
-// Socket.io will be connected in the next steps.
 let io = null;
 
-// Called once when the HTTP server starts.
+// Attach the Socket.io server.
 const setSocketServer = (socketServer) => {
   io = socketServer;
 };
 
-// Save a notification and send it live if Socket.io is ready.
+// Disconnect all active sockets belonging to one user.
+const disconnectNotificationUser = (userId) => {
+  if (!io) {
+    return;
+  }
+
+  try {
+    io.in(`user:${String(userId)}`).disconnectSockets(true);
+  } catch {
+    // Account deactivation and audit logging must continue.
+    console.error("Failed to disconnect notification sockets.");
+  }
+};
+
+// Save and deliver an approved notification.
 const notify = async (
   userId,
-  { type, title, message, link, babyId },
+  { type, title, message, link, babyId } = {},
 ) => {
-  // Never include a 13-digit personal ID in notifications.
-  const publicText = [type, title, message, link]
+  // Reject JMBG values before processing the notification.
+  const inputText = [type, title, message, link]
     .filter((value) => typeof value === "string")
     .join(" ");
 
-  if (/\d{13}/.test(publicText)) {
+  if (/\d{13}/.test(inputText)) {
     throw new Error("Notifications must not contain a JMBG.");
   }
 
-  // Only known notification fields are saved.
+  // Only approved notification types are accepted.
+  // Never save caller-provided titles or message text.
+  const template = getNotificationTemplate(type);
+
+  // Only approved navigation destinations may be included.
+  if (link !== undefined && link !== "/dashboard") {
+    throw new Error("Notification link is not allowed.");
+  }
+
   const notification = await Notification.create({
     recipientUserId: userId,
     type,
-    title,
-    message,
+    title: template.title,
+    message: template.message,
     ...(link ? { link } : {}),
     ...(babyId ? { babyId } : {}),
   });
 
-  // Live delivery is optional. The database record is permanent.
+  // Deliver only the saved, approved notification fields.
   if (io) {
     try {
       io.to(`user:${String(userId)}`).emit("notification:new", {
@@ -53,7 +69,7 @@ const notify = async (
         readAt: notification.readAt,
       });
     } catch {
-      // The user can still load saved notifications later.
+      // The saved notification can still be loaded later.
       console.error("Live notification delivery failed.");
     }
   }
@@ -61,11 +77,16 @@ const notify = async (
   return notification;
 };
 
-// Notify several users, for example both parents.
+// Send an approved notification to multiple recipients.
 const notifyMany = async (userIds, notification) => {
   return Promise.all(
     userIds.map((userId) => notify(userId, notification)),
   );
 };
 
-module.exports = { notify, notifyMany, setSocketServer };
+module.exports = {
+  notify,
+  notifyMany,
+  setSocketServer,
+  disconnectNotificationUser,
+};
