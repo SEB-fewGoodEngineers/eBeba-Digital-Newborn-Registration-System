@@ -7,11 +7,12 @@ const { verifyToken, requireRole } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
-const { ROLES, REGISTRATION_STATUS } = require("../constants");
 const {
   createRegistrationSchema,
   updateRegistrationSchema,
+  listRegistrationsQuerySchema, // NEW
 } = require("../validators/registrations");
+const { ROLES, REGISTRATION_STATUS } = require("../constants");
 
 const router = express.Router();
 
@@ -21,7 +22,7 @@ const isLinkedParent = (user, baby) =>
   user.role === ROLES.PARENT &&
   baby.authorizedUserIds.some((id) => id.equals(user._id));
 
-// APPLY TO REGISTER A BABY (parent only)
+  // APPLY TO REGISTER A BABY (parent only)
 router.post(
   "/",
   verifyToken,
@@ -87,6 +88,56 @@ router.post(
   }),
 );
 
+// LIST APPLICATIONS (MoI queue). Oldest first. moi_staff only.
+router.get(
+  "/",
+  verifyToken,
+  requireRole(ROLES.MOI_STAFF),
+  asyncHandler(async (req, res) => {
+    // 1. Validate the query string. Anything that is not a known status → 400.
+    const parsed = listRegistrationsQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ err: "Bad status filter." });
+    }
+    const { status } = parsed.data; // "pending" by default
+
+    // 2. Query. Explicit projection + narrow populate = no PII in the list.
+    const registrations = await Registration.find({ status })
+      .sort({ createdAt: 1 }) // oldest first
+      .select(
+        "proposedFirstName proposedLastName status createdAt babyId",
+      )
+      .populate({
+        path: "babyId",
+        select: "birthDateTime hospitalId gender",
+        populate: {
+          path: "hospitalId",
+          select: "name municipality",
+        },
+      })
+      .lean();
+
+    // 3. Response: small, fixed shape. No JMBG, no mother/father, no address.
+    res.status(200).json(
+      registrations.map((r) => ({
+        _id: r._id,
+        proposedFirstName: r.proposedFirstName,
+        proposedLastName: r.proposedLastName,
+        status: r.status,
+        createdAt: r.createdAt,
+        birthDateTime: r.babyId?.birthDateTime,
+        gender: r.babyId?.gender,
+        hospital: r.babyId?.hospitalId
+          ? {
+              name: r.babyId.hospitalId.name,
+              municipality: r.babyId.hospitalId.municipality,
+            }
+          : null,
+      })),
+    );
+  }),
+);
+
 // READ ONE APPLICATION
 // Allowed: the parent linked to the baby, or any MoI staff member.
 router.get(
@@ -128,6 +179,107 @@ router.get(
       statusHistory: registration.statusHistory,
       createdAt: registration.createdAt,
       updatedAt: registration.updatedAt,
+    });
+  }),
+);
+
+// REVIEW ONE APPLICATION WITH ITS BIRTH RECORD (moi_staff only).
+// One query, one audit line. No JMBG digits leave the server.
+router.get(
+  "/:registrationId/review",
+  verifyToken,
+  requireRole(ROLES.MOI_STAFF),
+  asyncHandler(async (req, res) => {
+    const { registrationId } = req.params;
+    if (!mongoose.isValidObjectId(registrationId)) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    const registration = await Registration.findById(registrationId)
+      .select(
+        "proposedFirstName proposedLastName residentialAddress municipality " +
+          "status reviewerNotes statusHistory createdAt babyId submittedByUserId",
+      )
+      .populate({
+        path: "babyId",
+        select:
+          "birthRecordNumber gender birthDateTime placeOfBirth municipalityOfBirth " +
+          "birthWeightGrams birthLengthCm familyType mother father " +
+          "hospitalId firstName lastName jmbg registeredAt",
+        populate: { path: "hospitalId", select: "name municipality" },
+      })
+      .populate({
+        path: "submittedByUserId",
+        select: "firstName lastName email role",
+      })
+      .lean();
+
+    if (!registration || !registration.babyId) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    // Audit the read. Who saw which baby — no PII in the audit.
+    await audit.log({
+      actor: req.user,
+      action: "registration.review",
+      targetCollection: "registrations",
+      targetDocumentId: registration._id,
+      changes: { after: { babyId: registration.babyId._id } },
+    });
+
+    // Redact JMBGs before sending. The officer does not need the digits to
+    // decide; the "is there a JMBG on file" boolean is enough.
+    const redactParent = (p) =>
+      p
+        ? {
+            firstName: p.firstName,
+            lastName: p.lastName,
+            maidenName: p.maidenName,
+            dateOfBirth: p.dateOfBirth,
+            hasJmbg: Boolean(p.jmbg),
+            citizenship: p.citizenship,
+            address: p.address,
+            email: p.email,
+          }
+        : null;
+
+    res.status(200).json({
+      registration: {
+        _id: registration._id,
+        proposedFirstName: registration.proposedFirstName,
+        proposedLastName: registration.proposedLastName,
+        residentialAddress: registration.residentialAddress,
+        municipality: registration.municipality,
+        status: registration.status,
+        reviewerNotes: registration.reviewerNotes,
+        statusHistory: registration.statusHistory,
+        createdAt: registration.createdAt,
+      },
+      applicant: {
+        firstName: registration.submittedByUserId?.firstName,
+        lastName: registration.submittedByUserId?.lastName,
+        email: registration.submittedByUserId?.email,
+        role: registration.submittedByUserId?.role,
+      },
+      baby: {
+        _id: registration.babyId._id,
+        birthRecordNumber: registration.babyId.birthRecordNumber,
+        gender: registration.babyId.gender,
+        birthDateTime: registration.babyId.birthDateTime,
+        placeOfBirth: registration.babyId.placeOfBirth,
+        municipalityOfBirth: registration.babyId.municipalityOfBirth,
+        birthWeightGrams: registration.babyId.birthWeightGrams,
+        birthLengthCm: registration.babyId.birthLengthCm,
+        familyType: registration.babyId.familyType,
+        mother: redactParent(registration.babyId.mother),
+        father: redactParent(registration.babyId.father),
+        hospital: registration.babyId.hospitalId
+          ? {
+              name: registration.babyId.hospitalId.name,
+              municipality: registration.babyId.hospitalId.municipality,
+            }
+          : null,
+      },
     });
   }),
 );
