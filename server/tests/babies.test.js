@@ -1,7 +1,11 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 
-const { createBabySchema } = require("../validators/babies");
+const {
+  createBabySchema,
+  linkBabySchema,
+} = require("../validators/babies");
+
 const { GENDERS, FAMILY_TYPES } = require("../constants");
 
 const validBirth = {
@@ -87,4 +91,40 @@ test("removes fields controlled by the server", () => {
   assert.strictEqual(result.data.hospitalId, undefined);
   assert.strictEqual(result.data.createdByUserId, undefined);
   assert.strictEqual(result.data.birthRecordNumber, undefined);
+});
+
+
+test("accepts a valid birth record number", () => {
+  const result = linkBabySchema.safeParse({
+    birthRecordNumber: "BR-HOSP-PG-01-DEMO-123456",
+  });
+
+  assert.strictEqual(result.success, true);
+});
+
+test("rejects a missing birth record number", () => {
+  const result = linkBabySchema.safeParse({});
+
+  assert.strictEqual(result.success, false);
+});
+
+test("rejects an empty birth record number", () => {
+  const result = linkBabySchema.safeParse({
+    birthRecordNumber: "   ",
+  });
+
+  assert.strictEqual(result.success, false);
+});
+
+test("removes unknown fields from a link request", () => {
+  const result = linkBabySchema.safeParse({
+    birthRecordNumber: "BR-HOSP-PG-01-DEMO-123456",
+    hospitalId: "fake-hospital",
+    authorizedUserIds: ["fake-user"],
+  });
+
+  assert.strictEqual(result.success, true);
+  assert.deepStrictEqual(result.data, {
+    birthRecordNumber: "BR-HOSP-PG-01-DEMO-123456",
+  });
 });
