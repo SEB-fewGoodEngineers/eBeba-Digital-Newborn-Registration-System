@@ -37,6 +37,8 @@ import MyBabiesPage from "./pages/registration/MyBabiesPage";
 
 // STORY 4.5 - PEDIATRICIAN: MY BABIES
 import PediatricianBabiesPage from "./pages/pediatrician/PediatricianBabiesPage";
+// STORY 4.7 - PEDIATRICIAN SEES GROWTH
+import PediatricianGrowthPage from "./pages/pediatrician/PediatricianGrowthPage";
 
 // A3 - ADMIN: CREATE STAFF USERS
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
@@ -188,6 +190,16 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.PEDIATRICIAN]}>
                 <PediatricianBabiesPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 4.7 - PEDIATRICIAN SEES GROWTH */}
+          <Route
+            path="/pediatrician/babies/:babyId/growth"
+            element={
+              <RequireRole roles={[ROLES.PEDIATRICIAN]}>
+                <PediatricianGrowthPage />
               </RequireRole>
             }
           />

@@ -91,6 +91,14 @@ export default function PediatricianBabiesPage() {
                 >
                   Vaccinations
                 </Button>
+                {/* STORY 4.7 - GROWTH (read-only) */}
+                <Button
+                  component={RouterLink}
+                  to={`/pediatrician/babies/${baby._id}/growth`}
+                  variant="outlined"
+                >
+                  Growth
+                </Button>
               </Stack>
             </CardContent>
           </Card>
