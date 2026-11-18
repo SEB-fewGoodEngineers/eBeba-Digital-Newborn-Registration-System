@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { Link as RouterLink, useParams } from "react-router";
 import {
   Alert,
   Box,
@@ -185,9 +185,18 @@ export default function MedicalRecordsPage() {
         BabyHealth — Medical Records
       </Typography>
 
-      <Typography color="text.secondary" sx={{ mb: 3 }}>
+      <Typography color="text.secondary" sx={{ mb: 1 }}>
         Medical history, allergies, and examination notes.
       </Typography>
+
+      {/* STORY 4.3 - VACCINATIONS */}
+      <Button
+        component={RouterLink}
+        to={`/babies/${babyId}/vaccinations`}
+        sx={{ mb: 3 }}
+      >
+        Vaccinations
+      </Button>
 
       {isLoading && (
         <CircularProgress aria-label="Loading medical records" />

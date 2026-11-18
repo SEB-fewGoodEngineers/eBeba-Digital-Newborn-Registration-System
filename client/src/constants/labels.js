@@ -32,6 +32,9 @@ export const STATUS_LABELS = Object.freeze({
   completed: "Completed",
   card_issued: "Card issued",
   waiting_for_moi: "Waiting for MoI",
+  // Appointments (Story 4.4)
+  upcoming: "Upcoming",
+  cancelled: "Cancelled",
 });
 
 // MUI Chip colours for each status
@@ -45,4 +48,6 @@ export const STATUS_COLORS = Object.freeze({
   completed: "success",
   card_issued: "success",
   waiting_for_moi: "default",
+  upcoming: "info",
+  cancelled: "default",
 });

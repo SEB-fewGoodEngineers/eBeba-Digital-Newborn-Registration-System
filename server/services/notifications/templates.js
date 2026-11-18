@@ -28,6 +28,19 @@ const NOTIFICATION_TEMPLATES = Object.freeze({
     title: "Account update",
     message: GENERIC_MESSAGE,
   },
+
+  // N3 reminders: no vaccine name, no place, no medical details.
+  "vaccination.reminder": {
+    title: "Reminder",
+    message:
+      "A vaccination is planned in the next 24 hours. Sign in to your eBeba account for details.",
+  },
+
+  "appointment.reminder": {
+    title: "Reminder",
+    message:
+      "A check-up is planned in the next 24 hours. Sign in to your eBeba account for details.",
+  },
 });
 
 // Reject notification types without an approved template.

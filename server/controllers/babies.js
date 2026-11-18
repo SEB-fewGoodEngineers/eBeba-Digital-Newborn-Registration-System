@@ -61,15 +61,35 @@ router.post(
   }),
 );
 
-// GET MY HOSPITAL'S BIRTH RECORDS
+// STORY 1.5 - SEARCH THE HOSPITAL LIST
 router.get(
   "/",
   verifyToken,
   requireRole(ROLES.HOSPITAL_STAFF),
   asyncHandler(async (req, res) => {
-    const babies = await Baby.find({
+    const search = String(req.query.search || "").trim();
+
+    const filter = {
       hospitalId: req.user.institutionId,
-    }).sort({ createdAt: -1 });
+    };
+
+    if (search) {
+      // Escape special regex characters to prevent regex injection.
+      const escapedSearch = search
+        .slice(0, 100)
+        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+      const regex = new RegExp(escapedSearch, "i");
+
+      filter.$or = [
+        { "mother.lastName": regex },
+        { birthRecordNumber: regex },
+      ];
+    }
+
+    const babies = await Baby.find(filter).sort({
+      createdAt: -1,
+    });
 
     const babyIds = babies.map((baby) => baby._id);
 
@@ -159,6 +179,92 @@ router.get(
     }).sort({ createdAt: -1 });
 
     res.status(200).json(babies);
+  }),
+);
+
+// STORY 1.4 - CORRECT A BIRTH RECORD
+router.patch(
+  "/:babyId",
+  verifyToken,
+  requireRole(ROLES.HOSPITAL_STAFF),
+  requireBabyAccess,
+  validate(createBabySchema),
+  asyncHandler(async (req, res) => {
+    const baby = req.baby;
+
+    // Only staff from the same hospital can edit the record
+    if (String(baby.hospitalId) !== String(req.user.institutionId)) {
+      return res.status(403).json({
+        err: "You cannot edit this birth record.",
+      });
+    }
+
+    // Do not allow changes after parents have applied
+    const registration = await Registration.exists({
+      babyId: baby._id,
+    });
+
+    if (registration) {
+      return res.status(409).json({
+        err: "The parents have already applied.",
+      });
+    }
+
+    const before = {
+      gender: baby.gender,
+      birthDateTime: baby.birthDateTime,
+      placeOfBirth: baby.placeOfBirth,
+      municipalityOfBirth: baby.municipalityOfBirth,
+      birthWeightGrams: baby.birthWeightGrams,
+      birthLengthCm: baby.birthLengthCm,
+      familyType: baby.familyType,
+      mother: baby.mother?.toObject(),
+      father: baby.father?.toObject(),
+    };
+
+    // Update only the editable birth fields
+    const editableFields = [
+      "gender",
+      "birthDateTime",
+      "placeOfBirth",
+      "municipalityOfBirth",
+      "birthWeightGrams",
+      "birthLengthCm",
+      "familyType",
+      "mother",
+      "father",
+    ];
+
+    for (const field of editableFields) {
+      baby.set(field, req.body[field]);
+    }
+
+    await baby.save();
+
+    const after = {
+      gender: baby.gender,
+      birthDateTime: baby.birthDateTime,
+      placeOfBirth: baby.placeOfBirth,
+      municipalityOfBirth: baby.municipalityOfBirth,
+      birthWeightGrams: baby.birthWeightGrams,
+      birthLengthCm: baby.birthLengthCm,
+      familyType: baby.familyType,
+      mother: baby.mother?.toObject(),
+      father: baby.father?.toObject(),
+    };
+
+    await audit.log({
+      actor: req.user,
+      action: "birth_record.update",
+      targetCollection: "babies",
+      targetDocumentId: baby._id,
+      changes: {
+        before,
+        after,
+      },
+    });
+
+    res.status(200).json(baby);
   }),
 );
 
