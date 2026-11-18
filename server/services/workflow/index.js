@@ -273,7 +273,7 @@ const approveRegistration = async (registration, user) => {
   await Promise.all(
     hospitalStaff.map((u) =>
       notify(u._id, {
-        type: "registration.approved.hospital",
+        type: "registration.approved",
         title: "A baby from your hospital was registered",
         message: "Open your dashboard to see the details.",
         link: "/dashboard",

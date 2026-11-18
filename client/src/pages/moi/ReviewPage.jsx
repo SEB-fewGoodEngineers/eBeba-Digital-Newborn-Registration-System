@@ -1,14 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import PrecheckPanel from "../../components/PrecheckPanel/PrecheckPanel";
-import { runPrecheck, decideFlag } from "../../services/aiSuggestionService";
-import {
-  approveRegistration as approveRegistrationApi,
-  getRegistrationReview,
-  returnRegistration as returnRegistrationApi,
-  rejectRegistration as rejectRegistrationApi,
-} from "../../services/registrationService";
-import TextField from "@mui/material/TextField"; // or add TextField to the existing MUI import block
 import {
   Alert,
   Box,
@@ -24,18 +15,27 @@ import {
   Divider,
   Grid,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
-import { formatDateTime } from "../../utils/dates";
-import StatusBadge from "../../components/StatusBadge/StatusBadge";
-import DemoBadge from "../../components/DemoBadge/DemoBadge";
-import StatusTimeline from "../../components/StatusTimeline/StatusTimeline";
 
-// Show "value" or "—". Used everywhere so an empty field is never "undefined".
+import PrecheckPanel from "../../components/PrecheckPanel/PrecheckPanel";
+import StatusBadge from "../../components/StatusBadge/StatusBadge";
+import StatusTimeline from "../../components/StatusTimeline/StatusTimeline";
+import DemoBadge from "../../components/DemoBadge/DemoBadge";
+
+import {
+  approveRegistration as approveRegistrationApi,
+  getRegistrationReview,
+  returnRegistration as returnRegistrationApi,
+  rejectRegistration as rejectRegistrationApi,
+  signCertificate,
+} from "../../services/registrationService";
+import { runPrecheck, decideFlag } from "../../services/aiSuggestionService";
+import { formatDateTime } from "../../utils/dates";
+
 const orDash = (v) => (v === undefined || v === null || v === "" ? "—" : v);
 
-// Two values side by side. If they differ, the line is marked with a warning
-// icon AND the word "differs" — colour alone is not enough (CONVENTIONS §7).
 function CompareRow({ label, proposed, record }) {
   const differs =
     String(proposed ?? "").trim() !== String(record ?? "").trim() &&
@@ -78,22 +78,33 @@ export default function ReviewPage() {
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
 
-  // Approve flow
+  // Approve
   const [approveOpen, setApproveOpen] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [approveError, setApproveError] = useState("");
-  const [approved, setApproved] = useState(null); // { jmbg, certificateNumber, … }
+  const [approved, setApproved] = useState(null);
+
+  // Return / Reject
   const [returnOpen, setReturnOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [decisionNote, setDecisionNote] = useState("");
   const [decisionError, setDecisionError] = useState("");
   const [isSubmittingDecision, setIsSubmittingDecision] = useState(false);
-  const [decisionDone, setDecisionDone] = useState(null); // { type, status }
-  const [suggestion, setSuggestion] = useState(null); // latest aiSuggestions doc
+  const [decisionDone, setDecisionDone] = useState(null);
+
+  // Pre-check
+  const [suggestion, setSuggestion] = useState(null);
   const [isRunningPrecheck, setIsRunningPrecheck] = useState(false);
   const [precheckError, setPrecheckError] = useState("");
   const [isDecidingFlag, setIsDecidingFlag] = useState(false);
 
+  // Sign certificate
+  const [certificateSigned, setCertificateSigned] = useState(false);
+  const [signError, setSignError] = useState("");
+  const [isSigning, setIsSigning] = useState(false);
+
+  // Fetch the review data. Reset of per-registration state is handled by
+  // <ReviewPage key={registrationId}> in App.jsx — this effect does only I/O.
   useEffect(() => {
     let ignore = false;
     getRegistrationReview(registrationId)
@@ -118,13 +129,9 @@ export default function ReviewPage() {
     try {
       const result = await approveRegistrationApi(registrationId);
       setApproved(result);
-      // reflect the new status on the page without a full reload
       setData((d) =>
         d
-          ? {
-              ...d,
-              registration: { ...d.registration, status: "approved" },
-            }
+          ? { ...d, registration: { ...d.registration, status: "approved" } }
           : d,
       );
       setApproveOpen(false);
@@ -132,6 +139,20 @@ export default function ReviewPage() {
       setApproveError(err.message);
     } finally {
       setIsApproving(false);
+    }
+  };
+
+  const handleSignCertificate = async () => {
+    if (!approved?.certificateId) return;
+    setSignError("");
+    setIsSigning(true);
+    try {
+      await signCertificate(approved.certificateId);
+      setCertificateSigned(true);
+    } catch (err) {
+      setSignError(err.message);
+    } finally {
+      setIsSigning(false);
     }
   };
 
@@ -153,8 +174,6 @@ export default function ReviewPage() {
     setIsDecidingFlag(true);
     try {
       const updated = await decideFlag(suggestion._id, flagId, decision);
-      // Prefer the server's response if it returns the updated suggestion.
-      // If it returns only the flag, merge locally.
       if (updated && updated.flags) {
         setSuggestion(updated);
       } else {
@@ -175,21 +194,6 @@ export default function ReviewPage() {
       setIsDecidingFlag(false);
     }
   };
-
-  if (status === "loading") {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 6 }}>
-        <CircularProgress aria-label="Loading" />
-      </Box>
-    );
-  }
-  if (status === "error") {
-    return (
-      <Box sx={{ maxWidth: 1200, mx: "auto", mt: 4, px: 2 }}>
-        <Alert severity="error">{error}</Alert>
-      </Box>
-    );
-  }
 
   const openReturn = () => {
     setDecisionNote("");
@@ -239,6 +243,21 @@ export default function ReviewPage() {
       setIsSubmittingDecision(false);
     }
   };
+
+  if (status === "loading") {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 6 }}>
+        <CircularProgress aria-label="Loading" />
+      </Box>
+    );
+  }
+  if (status === "error") {
+    return (
+      <Box sx={{ maxWidth: 1200, mx: "auto", mt: 4, px: 2 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   const { registration, applicant, baby } = data;
   const motherLast = baby.mother?.lastName;
@@ -292,40 +311,50 @@ export default function ReviewPage() {
 
       {approved && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Approved. Baby JMBG:
-          </Typography>
-          <Stack direction="row" alignItems="center" spacing={1}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{ mb: 1, flexWrap: "wrap" }}
+          >
+            <Typography variant="subtitle2">Approved.</Typography>
             <Typography
-              variant="body1"
+              variant="body2"
               sx={{ fontFamily: "monospace", letterSpacing: 1 }}
             >
               {approved.jmbg}
             </Typography>
             <DemoBadge />
           </Stack>
-          <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-            Certificate: {approved.certificateNumber}
-          </Typography>
-        </Alert>
-      )}
 
-      {approved && approved.certificateId && (
-        <Button
-          variant="outlined"
-          onClick={async () => {
-            try {
-              await signCertificate(approved.certificateId);
-              setCertificateSigned(true);
-            } catch (err) {
-              setSignError(err.message);
-            }
-          }}
-          disabled={certificateSigned}
-          type="button"
-        >
-          {certificateSigned ? "Certificate signed" : "Sign certificate"}
-        </Button>
+          {approved.certificateNumber && (
+            <Typography variant="caption" display="block" sx={{ mb: 1 }}>
+              Certificate: {approved.certificateNumber}
+            </Typography>
+          )}
+
+          {approved.certificateId && (
+            <Box sx={{ mt: 1 }}>
+              <Button
+                variant="outlined"
+                onClick={handleSignCertificate}
+                disabled={isSigning || certificateSigned}
+                type="button"
+              >
+                {certificateSigned
+                  ? "Certificate signed"
+                  : isSigning
+                    ? "Signing…"
+                    : "Sign certificate"}
+              </Button>
+              {signError && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  {signError}
+                </Alert>
+              )}
+            </Box>
+          )}
+        </Alert>
       )}
 
       {decisionDone && (
@@ -398,9 +427,8 @@ export default function ReviewPage() {
                 {baby.gender === "M" ? "Male" : "Female"}
               </Typography>
               <Typography variant="body2">
-                <strong>Weight / length:</strong>{" "}
-                {orDash(baby.birthWeightGrams)} g / {orDash(baby.birthLengthCm)}{" "}
-                cm
+                <strong>Weight / length:</strong> {orDash(baby.birthWeightGrams)}{" "}
+                g / {orDash(baby.birthLengthCm)} cm
               </Typography>
               <Typography variant="body2">
                 <strong>Family type:</strong> {baby.familyType}
@@ -447,7 +475,6 @@ export default function ReviewPage() {
         </Grid>
       </Grid>
 
-      {/* DIFFERENCES — the point of the story: see what does not match */}
       <Card sx={{ mt: 2 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
@@ -540,6 +567,7 @@ export default function ReviewPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
       <Dialog
         open={returnOpen}
         onClose={() => !isSubmittingDecision && setReturnOpen(false)}
