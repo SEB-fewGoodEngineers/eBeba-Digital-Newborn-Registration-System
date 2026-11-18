@@ -32,6 +32,9 @@ import InboxPage from "./pages/inbox/InboxPage";
 import LinkBabyPage from "./pages/registration/LinkBabyPage";
 import MyBabiesPage from "./pages/registration/MyBabiesPage";
 
+// STORY 4.5 - PEDIATRICIAN: MY BABIES
+import PediatricianBabiesPage from "./pages/pediatrician/PediatricianBabiesPage";
+
 // A3 - ADMIN: CREATE STAFF USERS
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 
@@ -172,6 +175,16 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.PARENT]}>
                 <ApplyPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 4.5 - PEDIATRICIAN: MY BABIES */}
+          <Route
+            path="/pediatrician/babies"
+            element={
+              <RequireRole roles={[ROLES.PEDIATRICIAN]}>
+                <PediatricianBabiesPage />
               </RequireRole>
             }
           />
