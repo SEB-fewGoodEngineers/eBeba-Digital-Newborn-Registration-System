@@ -29,6 +29,7 @@ import {
 import { formatDateTime } from "../../utils/dates";
 import StatusBadge from "../../components/StatusBadge/StatusBadge";
 import DemoBadge from "../../components/DemoBadge/DemoBadge";
+import StatusTimeline from "../../components/StatusTimeline/StatusTimeline";
 
 // Show "value" or "—". Used everywhere so an empty field is never "undefined".
 const orDash = (v) => (v === undefined || v === null || v === "" ? "—" : v);
@@ -473,6 +474,15 @@ export default function ReviewPage() {
         isDeciding={isDecidingFlag}
         error={precheckError}
       />
+
+      <Card sx={{ mt: 2 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Application history
+          </Typography>
+          <StatusTimeline history={registration.statusHistory} />
+        </CardContent>
+      </Card>
 
       <Dialog
         open={approveOpen}

@@ -19,6 +19,7 @@ import {
   resubmitRegistration,
 } from "../../services/registrationService";
 import StatusBadge from "../../components/StatusBadge/StatusBadge";
+import StatusTimeline from "../../components/StatusTimeline/StatusTimeline";
 
 export default function ApplyPage() {
   const [babies, setBabies] = useState([]);
@@ -188,6 +189,13 @@ export default function ApplyPage() {
               <Typography variant="body2">{reg.reviewerNotes}</Typography>
             </Alert>
           )}
+
+          <Box sx={{ my: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              History
+            </Typography>
+            <StatusTimeline history={reg.statusHistory} />
+          </Box>
 
           {!isEditing ? (
             <Stack spacing={1}>

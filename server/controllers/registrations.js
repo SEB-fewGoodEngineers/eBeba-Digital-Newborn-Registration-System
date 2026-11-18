@@ -64,14 +64,19 @@ router.post(
       babyId, // from the checked body, not trusted beyond ownership
       submittedByUserId: req.user._id, // never from the body
       status: REGISTRATION_STATUS.PENDING, // server-set
-      statusHistory: [
-        {
-          from: "", // empty for the first entry (data model note)
-          to: REGISTRATION_STATUS.PENDING,
-          byUserId: req.user._id,
-          at: new Date(),
-        },
-      ],
+      statusHistory: (registration.statusHistory || []).map((h) => ({
+        from: h.from,
+        to: h.to,
+        at: h.at,
+        note: h.note,
+        byUser: h.byUserId
+          ? {
+              firstName: h.byUserId.firstName,
+              lastName: h.byUserId.lastName,
+              role: h.byUserId.role,
+            }
+          : null,
+      })),
     });
 
     // 4. Audit trail – Hyppönen: log what happened, not just the error.
@@ -519,15 +524,15 @@ router.post(
       return res.status(404).json({ err: "Application not found." });
     }
 
-    const registration = await Registration.findById(registrationId);
+    const registration = await Registration.findById(registrationId)
+      .populate({
+        path: "statusHistory.byUserId",
+        select: "firstName lastName role",
+      })
+      .lean();
+
     if (!registration) {
       return res.status(404).json({ err: "Application not found." });
-    }
-
-    if (!registration.submittedByUserId.equals(req.user._id)) {
-      return res
-        .status(403)
-        .json({ err: "You do not have access to this application." });
     }
 
     try {
