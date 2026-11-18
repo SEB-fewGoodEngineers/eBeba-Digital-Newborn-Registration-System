@@ -39,8 +39,19 @@ const listRegistrationsQuerySchema = z.object({
     .default(REGISTRATION_STATUS.PENDING),
 });
 
+// Body for POST /:id/return and POST /:id/reject (moi_staff).
+// reviewerNotes is REQUIRED — a decision without a reason is not allowed.
+const reviewDecisionSchema = z.object({
+  reviewerNotes: z
+    .string({ error: "Please write a note for the parent." })
+    .trim()
+    .min(1, "Please write a note for the parent.")
+    .max(1000, "The note is too long."),
+});
+
 module.exports = {
   createRegistrationSchema,
   updateRegistrationSchema,
   listRegistrationsQuerySchema,
+  reviewDecisionSchema,
 };

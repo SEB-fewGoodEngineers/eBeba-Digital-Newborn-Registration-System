@@ -112,6 +112,7 @@ export default function HospitalBirthListPage() {
                 <TableCell>Municipality</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>JMBG</TableCell>
+                <TableCell>Action</TableCell>
               </TableRow>
             </TableHead>
 
@@ -129,7 +130,8 @@ export default function HospitalBirthListPage() {
                   </TableCell>
 
                   <TableCell>
-                    {baby.mother.firstName} {baby.mother.lastName}
+                    {baby.mother.firstName}{" "}
+                    {baby.mother.lastName}
                   </TableCell>
 
                   <TableCell>{baby.municipalityOfBirth}</TableCell>
@@ -146,6 +148,22 @@ export default function HospitalBirthListPage() {
                         {baby.jmbg}
                         <DemoBadge />
                       </>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
+
+                  {/* STORY 1.4 - CORRECT A BIRTH RECORD */}
+                  <TableCell>
+                    {!baby.registrationStatus ? (
+                      <Button
+                        component={Link}
+                        to={`/hospital/babies/${baby._id}/edit`}
+                        variant="outlined"
+                        size="small"
+                      >
+                        Edit
+                      </Button>
                     ) : (
                       "—"
                     )}

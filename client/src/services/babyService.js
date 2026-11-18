@@ -24,3 +24,11 @@ export const linkBaby = (birthRecordNumber) =>
 export const getMyBabies = () => api("/babies/mine");
 
 export const getBaby = (babyId) => api(`/babies/${babyId}`);
+
+// STORY 1.4 - CORRECT A BIRTH RECORD
+
+export const updateBaby = (babyId, babyData) =>
+  api(`/babies/${babyId}`, {
+    method: "PATCH",
+    body: babyData,
+  });

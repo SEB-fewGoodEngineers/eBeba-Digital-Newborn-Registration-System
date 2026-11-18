@@ -60,10 +60,99 @@ const approveRegistration = async (registration, user) => {
   return registration;
 };
 
+const audit = require("../audit");
+const { notify } = require("../notifications");
+
+// Return a registration to the parent for correction.
+// Throws 409 if the current status is not "pending" (transition() enforces).
+const returnRegistration = async (registration, user, reviewerNotes) => {
+  transition(
+    registration,
+    REGISTRATION_STATUS.RETURNED,
+    user,
+    reviewerNotes,
+  );
+  registration.reviewerNotes = reviewerNotes;
+  registration.reviewedByUserId = user._id;
+  registration.reviewedAt = new Date();
+  await registration.save();
+
+  await audit.log({
+    actor: user,
+    action: "registration.return",
+    targetCollection: "registrations",
+    targetDocumentId: registration._id,
+  });
+  await notify(registration.submittedByUserId, {
+    type: "registration.returned",
+    title: "Your application was returned for correction",
+    message:
+      "Open your application, read the note, correct the details and resubmit.",
+    link: "/registration/apply",
+    babyId: registration.babyId,
+  });
+  return registration;
+};
+
+// Reject a registration. Final in the demo: no route moves a rejected doc.
+const rejectRegistration = async (registration, user, reviewerNotes) => {
+  transition(
+    registration,
+    REGISTRATION_STATUS.REJECTED,
+    user,
+    reviewerNotes,
+  );
+  registration.reviewerNotes = reviewerNotes;
+  registration.reviewedByUserId = user._id;
+  registration.reviewedAt = new Date();
+  await registration.save();
+
+  await audit.log({
+    actor: user,
+    action: "registration.reject",
+    targetCollection: "registrations",
+    targetDocumentId: registration._id,
+  });
+  await notify(registration.submittedByUserId, {
+    type: "registration.rejected",
+    title: "Your application was rejected",
+    message:
+      "Open your application to read the officer's note. This decision is final.",
+    link: "/registration/apply",
+    babyId: registration.babyId,
+  });
+  return registration;
+};
+
+// Parent resubmits after fixing. returned -> pending.
+const unreturnRegistration = async (registration, user, note) => {
+  transition(
+    registration,
+    REGISTRATION_STATUS.PENDING,
+    user,
+    note || "Resubmitted after correction",
+  );
+  registration.reviewedByUserId = undefined;
+  registration.reviewedAt = undefined;
+  registration.reviewerNotes = undefined;
+  await registration.save();
+
+  await audit.log({
+    actor: user,
+    action: "registration.resubmit",
+    targetCollection: "registrations",
+    targetDocumentId: registration._id,
+  });
+  return registration;
+};
+
 module.exports = {
   DEMO_JMBG_REGION,
   transition,
   generateNumber,
   generateJmbg,
   approveRegistration,
+  returnRegistration,
+  rejectRegistration,
+  unreturnRegistration,
 };
