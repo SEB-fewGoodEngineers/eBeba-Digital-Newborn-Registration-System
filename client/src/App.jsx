@@ -22,6 +22,9 @@ import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import ReviewPage from "./pages/moi/ReviewPage";
 
+// STORY 4.3 - VACCINATIONS
+import VaccinationsPage from "./pages/health/VaccinationsPage";
+
 // N2 - DEMO INBOX
 import InboxPage from "./pages/inbox/InboxPage";
 
@@ -150,6 +153,16 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.PARENT, ROLES.PEDIATRICIAN]}>
                 <MedicalRecordsPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 4.3 - VACCINATIONS */}
+          <Route
+            path="/babies/:babyId/vaccinations"
+            element={
+              <RequireRole roles={[ROLES.PARENT, ROLES.PEDIATRICIAN]}>
+                <VaccinationsPage />
               </RequireRole>
             }
           />
