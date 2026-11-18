@@ -19,6 +19,7 @@ import CswCasesPage from "./pages/csw/CswCasesPage";
 import ApplyPage from "./pages/registration/ApplyPage";
 import QueuePage from "./pages/moi/QueuePage";
 import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
+import DashboardPage from "./pages/dashboard/DashboardPage";
 import ReviewPage from "./pages/moi/ReviewPage";
 
 // STORY 1.2 - LINK MY BABY
@@ -126,6 +127,16 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.PARENT]}>
                 <MyBabiesPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 4.2 - PARENT DASHBOARD */}
+          <Route
+            path="/dashboard"
+            element={
+              <RequireRole roles={[ROLES.PARENT]}>
+                <DashboardPage />
               </RequireRole>
             }
           />
