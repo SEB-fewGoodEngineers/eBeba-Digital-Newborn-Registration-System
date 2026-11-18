@@ -162,6 +162,92 @@ router.get(
   }),
 );
 
+// STORY 1.4 - CORRECT A BIRTH RECORD
+router.patch(
+  "/:babyId",
+  verifyToken,
+  requireRole(ROLES.HOSPITAL_STAFF),
+  requireBabyAccess,
+  validate(createBabySchema),
+  asyncHandler(async (req, res) => {
+    const baby = req.baby;
+
+    // Only staff from the same hospital can edit the record
+    if (String(baby.hospitalId) !== String(req.user.institutionId)) {
+      return res.status(403).json({
+        err: "You cannot edit this birth record.",
+      });
+    }
+
+    // Do not allow changes after parents have applied
+    const registration = await Registration.exists({
+      babyId: baby._id,
+    });
+
+    if (registration) {
+      return res.status(409).json({
+        err: "The parents have already applied.",
+      });
+    }
+
+    const before = {
+      gender: baby.gender,
+      birthDateTime: baby.birthDateTime,
+      placeOfBirth: baby.placeOfBirth,
+      municipalityOfBirth: baby.municipalityOfBirth,
+      birthWeightGrams: baby.birthWeightGrams,
+      birthLengthCm: baby.birthLengthCm,
+      familyType: baby.familyType,
+      mother: baby.mother?.toObject(),
+      father: baby.father?.toObject(),
+    };
+
+    // Update only the editable birth fields
+    const editableFields = [
+      "gender",
+      "birthDateTime",
+      "placeOfBirth",
+      "municipalityOfBirth",
+      "birthWeightGrams",
+      "birthLengthCm",
+      "familyType",
+      "mother",
+      "father",
+    ];
+
+    for (const field of editableFields) {
+      baby.set(field, req.body[field]);
+    }
+
+    await baby.save();
+
+    const after = {
+      gender: baby.gender,
+      birthDateTime: baby.birthDateTime,
+      placeOfBirth: baby.placeOfBirth,
+      municipalityOfBirth: baby.municipalityOfBirth,
+      birthWeightGrams: baby.birthWeightGrams,
+      birthLengthCm: baby.birthLengthCm,
+      familyType: baby.familyType,
+      mother: baby.mother?.toObject(),
+      father: baby.father?.toObject(),
+    };
+
+    await audit.log({
+      actor: req.user,
+      action: "birth_record.update",
+      targetCollection: "babies",
+      targetDocumentId: baby._id,
+      changes: {
+        before,
+        after,
+      },
+    });
+
+    res.status(200).json(baby);
+  }),
+);
+
 // GET ONE BABY IF THE USER HAS ACCESS
 router.get(
   "/:babyId",
