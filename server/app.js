@@ -18,6 +18,7 @@ const growthMeasurementsRouter = require("./controllers/growthMeasurements");
 const milestonesRouter = require("./controllers/milestones");
 const medicalRecordsRouter = require("./controllers/medicalRecords");
 const adminRouter = require("./controllers/admin");
+const notificationsRouter = require("./controllers/notifications");
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use("/babies", babiesRouter);
 app.use("/babies/:babyId/diary-entries", diaryEntriesRouter);
 app.use("/babies/:babyId/growth-measurements", growthMeasurementsRouter);
 app.use("/babies/:babyId/medical-records", medicalRecordsRouter);
+app.use("/notifications", notificationsRouter);
 
 // Unknown route
 app.use((req, res) => {
