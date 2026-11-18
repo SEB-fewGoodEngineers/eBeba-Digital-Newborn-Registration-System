@@ -21,6 +21,7 @@ const adminRouter = require("./controllers/admin");
 const vaccinationsRouter = require("./controllers/vaccinations");
 const notificationsRouter = require("./controllers/notifications");
 const dashboardRouter = require("./controllers/dashboard");
+const appointmentsRouter = require("./controllers/appointments");
 
 const app = express();
 
@@ -61,6 +62,8 @@ app.use("/babies/:babyId/vaccinations", vaccinationsRouter);
 app.use("/notifications", notificationsRouter);
 // STORY 4.2 - PARENT DASHBOARD
 app.use("/dashboard", dashboardRouter);
+// STORY 4.4 - APPOINTMENTS
+app.use("/babies/:babyId/appointments", appointmentsRouter);
 
 // Unknown route
 app.use((req, res) => {
