@@ -23,6 +23,7 @@ const vaccinationsRouter = require("./controllers/vaccinations");
 const notificationsRouter = require("./controllers/notifications");
 const dashboardRouter = require("./controllers/dashboard");
 const appointmentsRouter = require("./controllers/appointments");
+const calendarRouter = require("./controllers/calendar");
 
 const app = express();
 
@@ -66,6 +67,8 @@ app.use("/notifications", notificationsRouter);
 app.use("/dashboard", dashboardRouter);
 // STORY 4.4 - APPOINTMENTS
 app.use("/babies/:babyId/appointments", appointmentsRouter);
+// STORY 4.6 - CALENDAR EXPORT
+app.use("/babies/:babyId/calendar.ics", calendarRouter);
 
 // Unknown route
 app.use((req, res) => {

@@ -3,7 +3,9 @@ import { api } from "./api";
 
 // STORY 1.1 - HOSPITAL BIRTH RECORDS
 
-export const getBabies = () => api("/babies");
+// STORY 1.5 - SEARCH THE HOSPITAL LIST
+export const getBabies = (search = "") =>
+  api(`/babies?search=${encodeURIComponent(search)}`);
 
 export const createBaby = (babyData) =>
   api("/babies", {

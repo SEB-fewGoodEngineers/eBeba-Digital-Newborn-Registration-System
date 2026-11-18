@@ -61,15 +61,35 @@ router.post(
   }),
 );
 
-// GET MY HOSPITAL'S BIRTH RECORDS
+// STORY 1.5 - SEARCH THE HOSPITAL LIST
 router.get(
   "/",
   verifyToken,
   requireRole(ROLES.HOSPITAL_STAFF),
   asyncHandler(async (req, res) => {
-    const babies = await Baby.find({
+    const search = String(req.query.search || "").trim();
+
+    const filter = {
       hospitalId: req.user.institutionId,
-    }).sort({ createdAt: -1 });
+    };
+
+    if (search) {
+      // Escape special regex characters to prevent regex injection.
+      const escapedSearch = search
+        .slice(0, 100)
+        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+      const regex = new RegExp(escapedSearch, "i");
+
+      filter.$or = [
+        { "mother.lastName": regex },
+        { birthRecordNumber: regex },
+      ];
+    }
+
+    const babies = await Baby.find(filter).sort({
+      createdAt: -1,
+    });
 
     const babyIds = babies.map((baby) => baby._id);
 
