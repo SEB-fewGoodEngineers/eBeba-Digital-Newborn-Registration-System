@@ -19,6 +19,7 @@ const milestonesRouter = require("./controllers/milestones");
 const medicalRecordsRouter = require("./controllers/medicalRecords");
 const adminRouter = require("./controllers/admin");
 const notificationsRouter = require("./controllers/notifications");
+const dashboardRouter = require("./controllers/dashboard");
 
 const app = express();
 
@@ -56,6 +57,8 @@ app.use("/babies/:babyId/diary-entries", diaryEntriesRouter);
 app.use("/babies/:babyId/growth-measurements", growthMeasurementsRouter);
 app.use("/babies/:babyId/medical-records", medicalRecordsRouter);
 app.use("/notifications", notificationsRouter);
+// STORY 4.2 - PARENT DASHBOARD
+app.use("/dashboard", dashboardRouter);
 
 // Unknown route
 app.use((req, res) => {
