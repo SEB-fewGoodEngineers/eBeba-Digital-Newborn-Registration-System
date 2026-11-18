@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 
 import { useUser } from "../../contexts/UserContext";
+import RunRemindersCard from "../../components/RunRemindersCard/RunRemindersCard";
 import { ROLES, ROLE_LABELS } from "../../constants/labels";
 import {
   getAdminUsers,
@@ -165,6 +166,9 @@ export default function AdminUsersPage() {
       <Typography variant="h5" component="h1" gutterBottom>
         User administration
       </Typography>
+
+      {/* N3 - REMINDERS */}
+      <RunRemindersCard />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>

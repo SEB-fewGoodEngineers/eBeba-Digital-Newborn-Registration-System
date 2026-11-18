@@ -15,6 +15,8 @@ const audit = require("../services/audit");
 const {
   disconnectNotificationUser,
 } = require("../services/notifications");
+// N3: called as reminders.runReminders so tests can replace it.
+const reminders = require("../services/notifications/reminders");
 
 const {
   createStaffSchema,
@@ -194,6 +196,28 @@ router.get(
       .lean();
 
     res.status(200).json(logs);
+  }),
+);
+
+// N3 - RUN REMINDERS NOW
+// The same job as the daily one. Needed because a free Render server
+// may be asleep when the daily job should run.
+router.post(
+  "/run-reminders",
+  asyncHandler(async (req, res) => {
+    const result = await reminders.runReminders();
+
+    // One run changes many documents, so the audit entry gets its own run id.
+    const runId = new mongoose.Types.ObjectId();
+    await audit.log({
+      actor: req.user,
+      action: "reminders.run",
+      targetCollection: "notifications",
+      targetDocumentId: runId,
+      changes: { after: result }, // counts only, no personal data
+    });
+
+    res.status(200).json({ runId, ...result });
   }),
 );
 

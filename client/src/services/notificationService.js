@@ -7,6 +7,10 @@ export const getNotifications = () => api("/notifications");
 export const markNotificationRead = (notificationId) =>
   api(`/notifications/${notificationId}/read`, { method: "PATCH" });
 
+// N3: the admin runs the reminder job now. Returns the counts.
+export const runRemindersNow = () =>
+  api("/admin/run-reminders", { method: "POST" });
+
 // Only follow links inside our own app ("/dashboard"), never "//other.site"
 // or "https://...". The server also allows only approved links.
 export const isInternalLink = (link) =>
