@@ -376,6 +376,7 @@ router.post(
 
     res.status(200).json({
       registrationId: registration._id,
+      certificateId: certificate?._id ?? null,
       status: registration.status, // "approved" after W2
       jmbg: certificate?.jmbg ?? null,
       certificateNumber: certificate?.certificateNumber ?? null,

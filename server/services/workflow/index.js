@@ -2,7 +2,18 @@
 // Owner: Workflow service (Epic 2), tasks W1–W2.
 // The function names and arguments are final: call them now in your stories.
 const crypto = require("crypto");
-const { REGISTRATION_STATUS } = require("../../constants");
+const Baby = require("../../models/Baby");
+const Certificate = require("../../models/Certificate");
+const CswCase = require("../../models/CswCase");
+const InsuranceRecord = require("../../models/InsuranceRecord");
+const Institution = require("../../models/Institution");
+const {
+  REGISTRATION_STATUS,
+  ROLES,
+  INSTITUTION_TYPES,
+} = require("../../constants");
+const { MUNICIPALITY_JMBG } = require("../../constants/jmbgRegions");
+const User = require("../../models/User");
 
 // Demo JMBG region code: 99 (decided by the instructor).
 // Every JMBG in eBeba is fictional and is always shown with a DEMO badge.
@@ -33,16 +44,50 @@ const generateNumber = (prefix) =>
   `${prefix}-DEMO-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 
 /**
- * 13 digits: DDMMYYY + region (2) + 3 digits + check digit.
- * TODO W1: calculate the real check digit (now always 0).
+ * Mod-11 check digit, per Zakon o centralnom registru stanovništva, čl. 26.
+ * Returns a single digit 0-9. There is NO error case: both m = 10 and m = 11
+ * produce check digit 0. Treating m = 10 as an error is a common mistake.
  */
-const generateJmbg = (birthDateTime) => {
+const jmbgCheckDigit = (first12) => {
+  if (first12.length !== 12) throw new Error("JMBG needs exactly 12 digits.");
+  const d = first12.split("").map(Number);
+  const sum =
+    7 * (d[0] + d[6]) +
+    6 * (d[1] + d[7]) +
+    5 * (d[2] + d[8]) +
+    4 * (d[3] + d[9]) +
+    3 * (d[4] + d[10]) +
+    2 * (d[5] + d[11]);
+  const m = 11 - (sum % 11);
+  if (m === 10 || m === 11) return 0;
+  return m;
+};
+
+/**
+ * Generate a DEMO JMBG for a baby born in a Montenegrin municipality.
+ * @param {Date}   birthDateTime
+ * @param {string} municipality  e.g. "Bar", "Podgorica"
+ * @param {"M"|"F"} gender
+ * @returns {string} 13 digits
+ */
+const generateJmbg = (birthDateTime, municipality, gender) => {
+  const muni = MUNICIPALITY_JMBG[municipality];
+  if (!muni) {
+    throw new Error(`No JMBG region for municipality "${municipality}".`);
+  }
+
   const d = new Date(birthDateTime);
   const dd = String(d.getUTCDate()).padStart(2, "0");
   const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const yyy = String(d.getUTCFullYear()).slice(1);
-  const serial = String(crypto.randomInt(0, 1000)).padStart(3, "0");
-  return `${dd}${mm}${yyy}${DEMO_JMBG_REGION}${serial}0`;
+  const yyy = String(d.getUTCFullYear()).slice(-3);
+
+  const [min, max] = gender === "M" ? muni.male : muni.female;
+  const serial = crypto.randomInt(min, max + 1); // inclusive
+  const bbb = String(serial).padStart(3, "0");
+
+  const first12 = `${dd}${mm}${yyy}${muni.area}${bbb}`;
+  const k = jmbgCheckDigit(first12);
+  return `${first12}${k}`;
 };
 
 /**
@@ -52,11 +97,193 @@ const generateJmbg = (birthDateTime) => {
  *          notify the parents and the hospital; write to the audit log.
  * Now it only changes the status.
  */
+/**
+ * Approve a registration and start the work at CSW and FZO.
+ *
+ * Idempotent: a second call throws 409 from transition(), and every downstream
+ * write is an upsert keyed on babyId. Nothing is duplicated.
+ *
+ * Writes:
+ *   - registrations: status -> approved, reviewedByUserId, reviewedAt, statusHistory
+ *   - babies:        jmbg, firstName, lastName, residentialAddress, registeredAt
+ *   - certificates:  1 per baby (upsert)
+ *   - cswCases:      1 per baby (upsert), routed by municipality
+ *   - insuranceRecords: 1 per baby (upsert), routed by municipality
+ *   - audit.log:     registration.approve
+ *   - notify:        parent(s) + hospital staff
+ */
 const approveRegistration = async (registration, user) => {
+  // 1. Load the birth record. The baby is the source of gender and birth date.
+  const baby = await Baby.findById(registration.babyId);
+  if (!baby) {
+    throw new Error("Baby not found for this registration.");
+  }
+
+  // 2. Generate a realistic DEMO JMBG from the birth date, the municipality
+  //    the parent chose, and the baby's gender. Throws if the municipality
+  //    is not in the JMBG region table — do not approve a registration with
+  //    an unknown region.
+  const jmbg = generateJmbg(
+    baby.birthDateTime,
+    registration.municipality,
+    baby.gender,
+  );
+
+  // 3. Change the registration's status and add the history entry.
+  //    transition() throws 409 if the current status is not "pending".
   transition(registration, REGISTRATION_STATUS.APPROVED, user, "Approved");
   registration.reviewedByUserId = user._id;
   registration.reviewedAt = new Date();
   await registration.save();
+
+  // 4. Write the approved fields to the baby. $setOnInsert is NOT used here:
+  //    on re-run we would not reach this point, because transition() throws.
+  //    Use findOneAndUpdate with $set so a retried save is still safe.
+  const now = new Date();
+  await Baby.updateOne(
+    { _id: baby._id },
+    {
+      $set: {
+        jmbg,
+        firstName: registration.proposedFirstName,
+        lastName: registration.proposedLastName,
+        residentialAddress: registration.residentialAddress,
+        registeredAt: now,
+      },
+    },
+  );
+
+  // 5. Certificate — 1 per baby. Upsert so a crash-and-retry does not duplicate.
+  await Certificate.findOneAndUpdate(
+    { babyId: baby._id },
+    {
+      $setOnInsert: {
+        babyId: baby._id,
+        registrationId: registration._id,
+        certificateNumber: generateNumber("CERT"),
+        jmbg,
+        verificationCode: crypto.randomUUID(),
+        issuedByUserId: user._id,
+        issuedAt: now,
+        isDemo: true,
+      },
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  );
+
+  // 6. Route CSW and FZO by municipality (same rule for both).
+  //    Fall back to the first active institution of that type.
+  const cswInstitution = await Institution.findOne({
+    type: INSTITUTION_TYPES.CSW,
+    municipality: registration.municipality,
+    isActive: true,
+  }).lean();
+  const cswId =
+    cswInstitution?._id ||
+    (
+      await Institution.findOne({
+        type: INSTITUTION_TYPES.CSW,
+        isActive: true,
+      }).lean()
+    )?._id;
+
+  const fundInstitution = await Institution.findOne({
+    type: INSTITUTION_TYPES.HEALTH_INSURANCE_FUND,
+    municipality: registration.municipality,
+    isActive: true,
+  }).lean();
+  const fundId =
+    fundInstitution?._id ||
+    (
+      await Institution.findOne({
+        type: INSTITUTION_TYPES.HEALTH_INSURANCE_FUND,
+        isActive: true,
+      }).lean()
+    )?._id;
+
+  // 7. CSW case — upsert by babyId.
+  if (cswId) {
+    await CswCase.findOneAndUpdate(
+      { babyId: baby._id },
+      {
+        $setOnInsert: {
+          babyId: baby._id,
+          registrationId: registration._id,
+          cswInstitutionId: cswId,
+          status: "received",
+          statusHistory: [],
+        },
+      },
+      { upsert: true, setDefaultsOnInsert: true },
+    );
+  }
+
+  // 8. Insurance record — upsert by babyId.
+  if (fundId) {
+    await InsuranceRecord.findOneAndUpdate(
+      { babyId: baby._id },
+      {
+        $setOnInsert: {
+          babyId: baby._id,
+          registrationId: registration._id,
+          fundBranchId: fundId,
+          status: "received",
+          statusHistory: [],
+        },
+      },
+      { upsert: true, setDefaultsOnInsert: true },
+    );
+  }
+
+  // 9. Audit — after all writes succeeded. One line, no PII.
+  await audit.log({
+    actor: user,
+    action: "registration.approve",
+    targetCollection: "registrations",
+    targetDocumentId: registration._id,
+    changes: { after: { status: REGISTRATION_STATUS.APPROVED } },
+  });
+
+  // 10. Notify parents (authorizedUserIds) and hospital staff.
+  //     Messages must not contain JMBG or medical details.
+  await Promise.all(
+    (baby.authorizedUserIds || []).map((parentId) =>
+      notify(parentId, {
+        type: "registration.approved",
+        title: "Your baby's registration is approved",
+        message:
+          "The certificate will be available to download once it is signed.",
+        link: "/dashboard", // ← the only allowed link
+        babyId: baby._id,
+      }).catch((err) => {
+        // Notification is best-effort. The approval is already saved.
+        console.error("notify parent failed:", err.message);
+      }),
+    ),
+  );
+
+  const hospitalStaff = await User.find({
+    role: ROLES.HOSPITAL_STAFF,
+    institutionId: baby.hospitalId,
+    isActive: true,
+  })
+    .select("_id")
+    .lean();
+
+  await Promise.all(
+    hospitalStaff.map((u) =>
+      notify(u._id, {
+        type: "registration.approved.hospital",
+        title: "A baby from your hospital was registered",
+        message: "Open your dashboard to see the details.",
+        link: "/dashboard",
+        babyId: baby._id,
+      }).catch((err) => {
+        console.error("notify hospital staff failed:", err.message);
+      }),
+    ),
+  );
+
   return registration;
 };
 
@@ -66,12 +293,7 @@ const { notify } = require("../notifications");
 // Return a registration to the parent for correction.
 // Throws 409 if the current status is not "pending" (transition() enforces).
 const returnRegistration = async (registration, user, reviewerNotes) => {
-  transition(
-    registration,
-    REGISTRATION_STATUS.RETURNED,
-    user,
-    reviewerNotes,
-  );
+  transition(registration, REGISTRATION_STATUS.RETURNED, user, reviewerNotes);
   registration.reviewerNotes = reviewerNotes;
   registration.reviewedByUserId = user._id;
   registration.reviewedAt = new Date();
@@ -87,21 +309,18 @@ const returnRegistration = async (registration, user, reviewerNotes) => {
     type: "registration.returned",
     title: "Your application was returned for correction",
     message:
-      "Open your application, read the note, correct the details and resubmit.",
-    link: "/registration/apply",
+      "Open your dashboard, read the note, correct the details and resubmit.",
+    link: "/dashboard",
     babyId: registration.babyId,
+  }).catch((err) => {
+    console.error("notify parent failed:", err.message);
   });
   return registration;
 };
 
 // Reject a registration. Final in the demo: no route moves a rejected doc.
 const rejectRegistration = async (registration, user, reviewerNotes) => {
-  transition(
-    registration,
-    REGISTRATION_STATUS.REJECTED,
-    user,
-    reviewerNotes,
-  );
+  transition(registration, REGISTRATION_STATUS.REJECTED, user, reviewerNotes);
   registration.reviewerNotes = reviewerNotes;
   registration.reviewedByUserId = user._id;
   registration.reviewedAt = new Date();
@@ -117,9 +336,11 @@ const rejectRegistration = async (registration, user, reviewerNotes) => {
     type: "registration.rejected",
     title: "Your application was rejected",
     message:
-      "Open your application to read the officer's note. This decision is final.",
-    link: "/registration/apply",
+      "Open your dashboard to read the officer's note. This decision is final.",
+    link: "/dashboard",
     babyId: registration.babyId,
+  }).catch((err) => {
+    console.error("notify parent failed:", err.message);
   });
   return registration;
 };
@@ -147,10 +368,11 @@ const unreturnRegistration = async (registration, user, note) => {
 };
 
 module.exports = {
-  DEMO_JMBG_REGION,
+  DEMO_JMBG_REGION, // keep for backward compat if anything imports it; no longer used by generateJmbg
   transition,
   generateNumber,
   generateJmbg,
+  jmbgCheckDigit,
   approveRegistration,
   returnRegistration,
   rejectRegistration,

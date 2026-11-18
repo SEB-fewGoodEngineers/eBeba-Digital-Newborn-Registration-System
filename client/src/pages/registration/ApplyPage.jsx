@@ -114,7 +114,9 @@ export default function ApplyPage() {
     } catch (err) {
       setError(err.message);
       setFieldErrors(
-        Object.fromEntries((err.details || []).map((d) => [d.field, d.message])),
+        Object.fromEntries(
+          (err.details || []).map((d) => [d.field, d.message]),
+        ),
       );
     } finally {
       setIsSaving(false);
@@ -139,7 +141,9 @@ export default function ApplyPage() {
     } catch (err) {
       setEditError(err.message);
       setEditFieldErrors(
-        Object.fromEntries((err.details || []).map((d) => [d.field, d.message])),
+        Object.fromEntries(
+          (err.details || []).map((d) => [d.field, d.message]),
+        ),
       );
     } finally {
       setIsSavingEdit(false);
@@ -285,6 +289,20 @@ export default function ApplyPage() {
                   >
                     Cancel
                   </Button>
+
+                  <Button
+                    variant="contained"
+                    onClick={() => downloadCertificate(certificateId)}
+                    type="button"
+                  >
+                    Download certificate (PDF)
+                  </Button>
+                  <Typography variant="caption" display="block">
+                    This is a DEMO certificate. The signature proves the file
+                    was not altered after signing. It is not a qualified
+                    electronic signature under Montenegrin law and has no legal
+                    effect.
+                  </Typography>
                 </Stack>
               </Stack>
             </Box>

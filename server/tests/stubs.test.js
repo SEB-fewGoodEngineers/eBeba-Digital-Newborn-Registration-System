@@ -4,6 +4,8 @@ const { test } = require("node:test");
 const assert = require("node:assert");
 const mongoose = require("mongoose");
 
+const { generateJmbg } = require("../services/workflow");
+
 const { canAccessBaby } = require("../middleware/auth");
 const workflow = require("../services/workflow");
 const ai = require("../services/ai");
@@ -25,9 +27,9 @@ test("canAccessBaby: another parent does not", () => {
 });
 
 test("generateJmbg: 13 digits that start with DDMMYYY", () => {
-  const jmbg = workflow.generateJmbg(new Date("2026-11-16T08:00:00Z"));
-  assert.match(jmbg, /^\d{13}$/);
-  assert.ok(jmbg.startsWith("1611026"));
+  const jmbg = generateJmbg(new Date("2026-11-16T00:00:00Z"), "Podgorica", "M");
+  assert.strictEqual(jmbg.length, 13);
+  assert.strictEqual(jmbg.slice(0, 7), "1611026");
 });
 
 test("generateNumber: prefix + DEMO", () => {

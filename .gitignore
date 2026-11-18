@@ -13,3 +13,9 @@ dist-ssr
 
 # AI context files (built by npm run ai-context)
 ai-context/
+
+# Signing key — never commit
+*.pfx
+*.p12
+*.key
+server/certs/
