@@ -19,7 +19,17 @@ import CswCasesPage from "./pages/csw/CswCasesPage";
 import ApplyPage from "./pages/registration/ApplyPage";
 import QueuePage from "./pages/moi/QueuePage";
 import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
+import DashboardPage from "./pages/dashboard/DashboardPage";
 import ReviewPage from "./pages/moi/ReviewPage";
+
+// STORY 4.3 - VACCINATIONS
+import VaccinationsPage from "./pages/health/VaccinationsPage";
+
+// N2 - DEMO INBOX
+import InboxPage from "./pages/inbox/InboxPage";
+
+// STORY 4.4 - APPOINTMENTS
+import AppointmentsPage from "./pages/health/AppointmentsPage";
 
 // STORY 1.2 - LINK MY BABY
 import LinkBabyPage from "./pages/registration/LinkBabyPage";
@@ -82,6 +92,7 @@ export default function App() {
             }
           />
 
+          {/* STORY 1.1 - HOSPITAL BIRTH RECORDS */}
           <Route
             path="/hospital/babies"
             element={
@@ -93,6 +104,16 @@ export default function App() {
 
           <Route
             path="/hospital/babies/new"
+            element={
+              <RequireRole roles={[ROLES.HOSPITAL_STAFF]}>
+                <RecordBirthPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 1.4 - CORRECT A BIRTH RECORD */}
+          <Route
+            path="/hospital/babies/:babyId/edit"
             element={
               <RequireRole roles={[ROLES.HOSPITAL_STAFF]}>
                 <RecordBirthPage />
@@ -119,12 +140,32 @@ export default function App() {
             }
           />
 
+          {/* STORY 4.2 - PARENT DASHBOARD */}
+          <Route
+            path="/dashboard"
+            element={
+              <RequireRole roles={[ROLES.PARENT]}>
+                <DashboardPage />
+              </RequireRole>
+            }
+          />
+
           {/* STORY 4.1 - MEDICAL RECORDS */}
           <Route
             path="/babies/:babyId/medical-records"
             element={
               <RequireRole roles={[ROLES.PARENT, ROLES.PEDIATRICIAN]}>
                 <MedicalRecordsPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 4.3 - VACCINATIONS */}
+          <Route
+            path="/babies/:babyId/vaccinations"
+            element={
+              <RequireRole roles={[ROLES.PARENT, ROLES.PEDIATRICIAN]}>
+                <VaccinationsPage />
               </RequireRole>
             }
           />
@@ -173,6 +214,26 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.MOI_STAFF]}>
                 <ReviewPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 4.4 - APPOINTMENTS */}
+          <Route
+            path="/babies/:babyId/appointments"
+            element={
+              <RequireRole roles={[ROLES.PARENT, ROLES.PEDIATRICIAN]}>
+                <AppointmentsPage />
+              </RequireRole>
+            }
+          />
+
+          {/* N2 - DEMO INBOX (any signed-in user) */}
+          <Route
+            path="/inbox"
+            element={
+              <RequireRole>
+                <InboxPage />
               </RequireRole>
             }
           />

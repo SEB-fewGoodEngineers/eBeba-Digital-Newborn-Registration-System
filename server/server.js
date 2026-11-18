@@ -14,6 +14,7 @@ const { setSocketServer } = require("./services/notifications");
 const {
   authenticateNotificationSocket,
 } = require("./services/notifications/socketAuth");
+const { startReminderJob } = require("./services/notifications/reminders");
 
 // Stop early if a required setting is missing.
 for (const key of ["MONGODB_URI", "JWT_SECRET"]) {
@@ -63,6 +64,9 @@ mongoose
     server.listen(port, () => {
       console.log(`The eBeba API is ready on port ${port}!`);
     });
+
+    // N3: daily reminders (the admin can also run them with a button)
+    startReminderJob();
   })
   .catch((err) => {
     console.error("Could not connect to MongoDB:", err.message);

@@ -29,6 +29,9 @@ export default function CswCasesPage() {
   const [selectedCase, setSelectedCase] = useState(null);
   const [status, setStatus] = useState("loading"); // "loading" | "error" | "ready"
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [rejectNotes, setRejectNotes] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -49,6 +52,41 @@ export default function CswCasesPage() {
       ignore = true;
     };
   }, []);
+
+  const handleSelectCase = (cswCase) => {
+    setSelectedCase(cswCase);
+    setActionError("");
+    setRejectNotes("");
+  };
+
+  const syncUpdatedCase = (updated) => {
+    // Čuvamo postojeći babyId objekat ako ga server nije ponovo populirao
+    const merged = {
+      ...updated,
+      babyId:
+        typeof updated.babyId === "object" && updated.babyId !== null
+          ? updated.babyId
+          : selectedCase.babyId,
+    };
+    setSelectedCase(merged);
+    setCases((prev) =>
+      prev.map((item) => (item._id === merged._id ? merged : item)),
+    );
+  };
+
+  const handleAction = async (actionFn) => {
+    setActionError("");
+    setIsSaving(true);
+    try {
+      const updated = await actionFn();
+      syncUpdatedCase(updated);
+      setRejectNotes("");
+    } catch (err) {
+      setActionError(err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (status === "loading") {
     return (
@@ -91,31 +129,33 @@ export default function CswCasesPage() {
                     {index > 0 && <Divider />}
                     <ListItemButton
                       selected={selectedCase?._id === c._id}
-                      onClick={() => setSelectedCase(c)}
+                      onClick={() => handleSelectCase(c)}
                     >
                       <ListItemText
                         primary={
-                          <Stack
-                            direction="row"
-                            alignItems="center"
-                            spacing={1}
-                          >
-                            <Typography variant="subtitle1">
-                              {baby.firstName || "Proposed Name"}{" "}
-                              {baby.lastName || ""}
-                            </Typography>
-                            {baby.jmbg && <DemoBadge />}
-                          </Stack>
+                          <Typography variant="subtitle1">
+                            {baby.firstName || "Proposed Name"}{" "}
+                            {baby.lastName || ""}
+                          </Typography>
                         }
                         secondary={
-                          <>
-                            <Typography variant="body2" color="text.secondary">
+                          <Box component="span" sx={{ display: "block", mt: 0.5 }}>
+                            {baby.jmbg && (
+                              <Typography
+                                variant="body2"
+                                component="span"
+                                sx={{ display: "flex", alignItems: "center" }}
+                              >
+                                JMBG: {baby.jmbg} <DemoBadge />
+                              </Typography>
+                            )}
+                            <Typography variant="body2" component="span" display="block">
                               Created: {formatDate(c.createdAt)}
                             </Typography>
-                            <Box sx={{ mt: 1 }}>
+                            <Box component="span" sx={{ display: "inline-block", mt: 1 }}>
                               <StatusBadge status={c.status} />
                             </Box>
-                          </>
+                          </Box>
                         }
                       />
                     </ListItemButton>
@@ -134,11 +174,28 @@ export default function CswCasesPage() {
                 <Typography variant="h6" gutterBottom>
                   Case Details
                 </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Status: <StatusBadge status={selectedCase.status} />
-                </Typography>
+                <Box sx={{ mb: 1 }}>
+                  <StatusBadge status={selectedCase.status} />
+                </Box>
+
+                {selectedCase.socialCardNumber && (
+                  <Typography
+                    variant="body2"
+                    sx={{ display: "flex", alignItems: "center", mt: 1 }}
+                  >
+                    Social Card Number: {selectedCase.socialCardNumber}
+                    <DemoBadge />
+                  </Typography>
+                )}
+
+                {selectedCase.notes && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Notes: {selectedCase.notes}
+                  </Typography>
+                )}
+
                 <Divider sx={{ my: 2 }} />
-                
+
                 <Typography variant="subtitle2">Baby Civil Data</Typography>
                 <Typography variant="body2">
                   First Name: {selectedCase.babyId?.firstName || "N/A"}
@@ -174,65 +231,58 @@ export default function CswCasesPage() {
                   </Typography>
                 )}
 
+                {actionError && (
+                  <Alert severity="error" sx={{ mt: 2 }}>
+                    {actionError}
+                  </Alert>
+                )}
+
                 {/* Sekcija sa dugmadima za obradu predmeta (Start, Complete, Reject) */}
                 <Box sx={{ mt: 3, display: "flex", gap: 2, flexWrap: "wrap" }}>
-                  {selectedCase?.status === "received" && (
+                  {selectedCase.status === "received" && (
                     <Button
                       variant="contained"
                       color="primary"
-                      onClick={async () => {
-                        try {
-                          const updated = await startCswCase(selectedCase._id);
-                          setSelectedCase(updated);
-                        } catch (err) {
-                          alert(err.message);
-                        }
-                      }}
+                      disabled={isSaving}
+                      onClick={() =>
+                        handleAction(() => startCswCase(selectedCase._id))
+                      }
                     >
                       Start Case
                     </Button>
                   )}
 
-                  {selectedCase?.status === "in_progress" && (
+                  {selectedCase.status === "in_progress" && (
                     <>
                       <Button
                         variant="contained"
                         color="success"
-                        onClick={async () => {
-                          try {
-                            const updated = await completeCswCase(selectedCase._id);
-                            setSelectedCase(updated);
-                          } catch (err) {
-                            alert(err.message);
-                          }
-                        }}
+                        disabled={isSaving}
+                        onClick={() =>
+                          handleAction(() => completeCswCase(selectedCase._id))
+                        }
                       >
                         Complete & Issue Social Card
                       </Button>
 
-                      <Box sx={{ display: "flex", gap: 1, width: "100%", mt: 2 }}>
+                      <Box sx={{ display: "flex", gap: 1, width: "100%", mt: 1 }}>
                         <TextField
                           label="Rejection Reason"
                           size="small"
                           fullWidth
-                          id="rejectNotes"
+                          value={rejectNotes}
+                          onChange={(e) => setRejectNotes(e.target.value)}
                           placeholder="Enter reason for rejection..."
                         />
                         <Button
                           variant="outlined"
                           color="error"
-                          onClick={async () => {
-                            const notesInput = document.getElementById("rejectNotes").value;
-                            try {
-                              const updated = await rejectCswCase(
-                                selectedCase._id,
-                                notesInput
-                              );
-                              setSelectedCase(updated);
-                            } catch (err) {
-                              alert(err.message);
-                            }
-                          }}
+                          disabled={isSaving || !rejectNotes.trim()}
+                          onClick={() =>
+                            handleAction(() =>
+                              rejectCswCase(selectedCase._id, rejectNotes),
+                            )
+                          }
                         >
                           Reject
                         </Button>
