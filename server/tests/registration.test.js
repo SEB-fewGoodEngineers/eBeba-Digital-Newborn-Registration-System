@@ -97,3 +97,38 @@ test("list query: strips extra query params", () => {
   assert.strictEqual(result.success, true);
   assert.deepStrictEqual(Object.keys(result.data), ["status"]);
 });
+
+const { reviewDecisionSchema } = require("../validators/registrations");
+
+test("return/reject: requires reviewerNotes", () => {
+  const result = reviewDecisionSchema.safeParse({});
+  assert.strictEqual(result.success, false);
+  assert.ok(
+    result.error.issues.some((i) => i.path[0] === "reviewerNotes"),
+  );
+});
+
+test("return/reject: accepts a real note and trims it", () => {
+  const result = reviewDecisionSchema.safeParse({
+    reviewerNotes: "  Please add the diacritic.  ",
+  });
+  assert.strictEqual(result.success, true);
+  assert.strictEqual(result.data.reviewerNotes, "Please add the diacritic.");
+});
+
+test("return/reject: strips unknown fields like status or reviewerId", () => {
+  const result = reviewDecisionSchema.safeParse({
+    reviewerNotes: "Fix the address.",
+    status: "approved",
+    reviewedByUserId: "someone",
+  });
+  assert.strictEqual(result.success, true);
+  assert.deepStrictEqual(Object.keys(result.data), ["reviewerNotes"]);
+});
+
+test("return/reject: rejects a too-long note (matches model maxlength)", () => {
+  const result = reviewDecisionSchema.safeParse({
+    reviewerNotes: "x".repeat(1001),
+  });
+  assert.strictEqual(result.success, false);
+});
