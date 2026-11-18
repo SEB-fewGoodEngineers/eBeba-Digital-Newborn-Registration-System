@@ -7,15 +7,20 @@ const { verifyToken, requireRole } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
+
 const {
   approveRegistration: approveRegistrationService,
+  returnRegistration: returnRegistrationService,
+  rejectRegistration: rejectRegistrationService,
+  unreturnRegistration: unreturnRegistrationService,
 } = require("../services/workflow");
-
 const {
   createRegistrationSchema,
   updateRegistrationSchema,
-  listRegistrationsQuerySchema, // NEW
+  listRegistrationsQuerySchema,
+  reviewDecisionSchema,
 } = require("../validators/registrations");
+
 const { ROLES, REGISTRATION_STATUS } = require("../constants");
 
 const router = express.Router();
@@ -59,14 +64,19 @@ router.post(
       babyId, // from the checked body, not trusted beyond ownership
       submittedByUserId: req.user._id, // never from the body
       status: REGISTRATION_STATUS.PENDING, // server-set
-      statusHistory: [
-        {
-          from: "", // empty for the first entry (data model note)
-          to: REGISTRATION_STATUS.PENDING,
-          byUserId: req.user._id,
-          at: new Date(),
-        },
-      ],
+      statusHistory: (registration.statusHistory || []).map((h) => ({
+        from: h.from,
+        to: h.to,
+        at: h.at,
+        note: h.note,
+        byUser: h.byUserId
+          ? {
+              firstName: h.byUserId.firstName,
+              lastName: h.byUserId.lastName,
+              role: h.byUserId.role,
+            }
+          : null,
+      })),
     });
 
     // 4. Audit trail – Hyppönen: log what happened, not just the error.
@@ -179,6 +189,39 @@ router.get(
       status: registration.status,
       reviewerNotes: registration.reviewerNotes,
       statusHistory: registration.statusHistory,
+      createdAt: registration.createdAt,
+      updatedAt: registration.updatedAt,
+    });
+  }),
+);
+
+// The parent's application for one baby (used by ApplyPage).
+router.get(
+  "/by-baby/:babyId",
+  verifyToken,
+  requireRole(ROLES.PARENT),
+  asyncHandler(async (req, res) => {
+    const { babyId } = req.params;
+    if (!mongoose.isValidObjectId(babyId)) {
+      return res.status(404).json({ err: "Baby not found." });
+    }
+    const baby = await Baby.findById(babyId);
+    if (!baby || !isLinkedParent(req.user, baby)) {
+      return res
+        .status(403)
+        .json({ err: "You can only view applications for a linked baby." });
+    }
+    const registration = await Registration.findOne({ babyId });
+    if (!registration) return res.status(204).end();
+    res.status(200).json({
+      _id: registration._id,
+      babyId: registration.babyId,
+      proposedFirstName: registration.proposedFirstName,
+      proposedLastName: registration.proposedLastName,
+      residentialAddress: registration.residentialAddress,
+      municipality: registration.municipality,
+      status: registration.status,
+      reviewerNotes: registration.reviewerNotes,
       createdAt: registration.createdAt,
       updatedAt: registration.updatedAt,
     });
@@ -338,6 +381,172 @@ router.post(
       certificateNumber: certificate?.certificateNumber ?? null,
       verificationCode: certificate?.verificationCode ?? null,
       issuedAt: certificate?.issuedAt ?? null,
+    });
+  }),
+);
+
+router.post(
+  "/:registrationId/return",
+  verifyToken,
+  requireRole(ROLES.MOI_STAFF),
+  validate(reviewDecisionSchema),
+  asyncHandler(async (req, res) => {
+    const { registrationId } = req.params;
+    if (!mongoose.isValidObjectId(registrationId)) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    const registration = await Registration.findById(registrationId);
+    if (!registration) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    try {
+      await returnRegistrationService(
+        registration,
+        req.user,
+        req.body.reviewerNotes,
+      );
+    } catch (err) {
+      if (err.status === 409) {
+        return res.status(409).json({ err: err.message });
+      }
+      throw err;
+    }
+
+    res.status(200).json({
+      registrationId: registration._id,
+      status: registration.status,
+      reviewerNotes: registration.reviewerNotes,
+    });
+  }),
+);
+
+router.post(
+  "/:registrationId/reject",
+  verifyToken,
+  requireRole(ROLES.MOI_STAFF),
+  validate(reviewDecisionSchema),
+  asyncHandler(async (req, res) => {
+    const { registrationId } = req.params;
+    if (!mongoose.isValidObjectId(registrationId)) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    const registration = await Registration.findById(registrationId);
+    if (!registration) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    try {
+      await rejectRegistrationService(
+        registration,
+        req.user,
+        req.body.reviewerNotes,
+      );
+    } catch (err) {
+      if (err.status === 409) {
+        return res.status(409).json({ err: err.message });
+      }
+      throw err;
+    }
+
+    res.status(200).json({
+      registrationId: registration._id,
+      status: registration.status,
+      reviewerNotes: registration.reviewerNotes,
+    });
+  }),
+);
+
+router.put(
+  "/:registrationId",
+  verifyToken,
+  requireRole(ROLES.PARENT),
+  validate(updateRegistrationSchema),
+  asyncHandler(async (req, res) => {
+    const { registrationId } = req.params;
+    if (!mongoose.isValidObjectId(registrationId)) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    const registration = await Registration.findById(registrationId);
+    if (!registration) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    // Only the applicant may edit, and only when the status is "returned".
+    if (!registration.submittedByUserId.equals(req.user._id)) {
+      return res
+        .status(403)
+        .json({ err: "You do not have access to this application." });
+    }
+    if (registration.status !== REGISTRATION_STATUS.RETURNED) {
+      return res.status(409).json({
+        err: "You can only edit an application that has been returned.",
+      });
+    }
+
+    // Body already validated; only the four content fields are in it.
+    // Status, babyId and reviewer fields are not in updateRegistrationSchema.
+    Object.assign(registration, req.body);
+    await registration.save();
+
+    await audit.log({
+      actor: req.user,
+      action: "registration.edit",
+      targetCollection: "registrations",
+      targetDocumentId: registration._id,
+    });
+
+    res.status(200).json({
+      _id: registration._id,
+      babyId: registration.babyId,
+      proposedFirstName: registration.proposedFirstName,
+      proposedLastName: registration.proposedLastName,
+      residentialAddress: registration.residentialAddress,
+      municipality: registration.municipality,
+      status: registration.status,
+      reviewerNotes: registration.reviewerNotes,
+      createdAt: registration.createdAt,
+      updatedAt: registration.updatedAt,
+    });
+  }),
+);
+
+router.post(
+  "/:registrationId/resubmit",
+  verifyToken,
+  requireRole(ROLES.PARENT),
+  asyncHandler(async (req, res) => {
+    const { registrationId } = req.params;
+    if (!mongoose.isValidObjectId(registrationId)) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    const registration = await Registration.findById(registrationId)
+      .populate({
+        path: "statusHistory.byUserId",
+        select: "firstName lastName role",
+      })
+      .lean();
+
+    if (!registration) {
+      return res.status(404).json({ err: "Application not found." });
+    }
+
+    try {
+      await unreturnRegistrationService(registration, req.user);
+    } catch (err) {
+      if (err.status === 409) {
+        return res.status(409).json({ err: err.message });
+      }
+      throw err;
+    }
+
+    res.status(200).json({
+      registrationId: registration._id,
+      status: registration.status,
     });
   }),
 );

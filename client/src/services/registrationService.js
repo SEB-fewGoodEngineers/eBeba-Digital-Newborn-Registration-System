@@ -23,3 +23,28 @@ export const getRegistrationReview = (registrationId) =>
 // Idempotent on the server: second call returns 409.
 export const approveRegistration = (registrationId) =>
   api(`/registrations/${registrationId}/approve`, { method: "POST" });
+
+// MoI staff: return the application for correction. Body: { reviewerNotes }.
+export const returnRegistration = (registrationId, reviewerNotes) =>
+  api(`/registrations/${registrationId}/return`, {
+    method: "POST",
+    body: { reviewerNotes },
+  });
+
+// MoI staff: reject the application. Body: { reviewerNotes }. Final.
+export const rejectRegistration = (registrationId, reviewerNotes) =>
+  api(`/registrations/${registrationId}/reject`, {
+    method: "POST",
+    body: { reviewerNotes },
+  });
+
+// Parent: edit the four content fields. Server enforces status === "returned".
+export const updateRegistration = (registrationId, body) =>
+  api(`/registrations/${registrationId}`, { method: "PUT", body });
+
+// Parent: move returned -> pending. No body.
+export const resubmitRegistration = (registrationId) =>
+  api(`/registrations/${registrationId}/resubmit`, { method: "POST" });
+
+export const getRegistrationByBaby = (babyId) =>
+  api(`/registrations/by-baby/${babyId}`);

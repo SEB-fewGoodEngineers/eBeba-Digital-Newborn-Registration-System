@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
+import PrecheckPanel from "../../components/PrecheckPanel/PrecheckPanel";
+import { runPrecheck, decideFlag } from "../../services/aiSuggestionService";
+import {
+  approveRegistration as approveRegistrationApi,
+  getRegistrationReview,
+  returnRegistration as returnRegistrationApi,
+  rejectRegistration as rejectRegistrationApi,
+} from "../../services/registrationService";
+import TextField from "@mui/material/TextField"; // or add TextField to the existing MUI import block
 import {
   Alert,
   Box,
@@ -17,13 +26,10 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import {
-  approveRegistration as approveRegistrationApi,
-  getRegistrationReview,
-} from "../../services/registrationService";
 import { formatDateTime } from "../../utils/dates";
 import StatusBadge from "../../components/StatusBadge/StatusBadge";
 import DemoBadge from "../../components/DemoBadge/DemoBadge";
+import StatusTimeline from "../../components/StatusTimeline/StatusTimeline";
 
 // Show "value" or "—". Used everywhere so an empty field is never "undefined".
 const orDash = (v) => (v === undefined || v === null || v === "" ? "—" : v);
@@ -77,6 +83,16 @@ export default function ReviewPage() {
   const [isApproving, setIsApproving] = useState(false);
   const [approveError, setApproveError] = useState("");
   const [approved, setApproved] = useState(null); // { jmbg, certificateNumber, … }
+  const [returnOpen, setReturnOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [decisionNote, setDecisionNote] = useState("");
+  const [decisionError, setDecisionError] = useState("");
+  const [isSubmittingDecision, setIsSubmittingDecision] = useState(false);
+  const [decisionDone, setDecisionDone] = useState(null); // { type, status }
+  const [suggestion, setSuggestion] = useState(null); // latest aiSuggestions doc
+  const [isRunningPrecheck, setIsRunningPrecheck] = useState(false);
+  const [precheckError, setPrecheckError] = useState("");
+  const [isDecidingFlag, setIsDecidingFlag] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -119,6 +135,47 @@ export default function ReviewPage() {
     }
   };
 
+  const handleRunPrecheck = async () => {
+    setPrecheckError("");
+    setIsRunningPrecheck(true);
+    try {
+      const result = await runPrecheck(registrationId);
+      setSuggestion(result);
+    } catch (err) {
+      setPrecheckError(err.message);
+    } finally {
+      setIsRunningPrecheck(false);
+    }
+  };
+
+  const handleDecideFlag = async (flagId, decision) => {
+    setPrecheckError("");
+    setIsDecidingFlag(true);
+    try {
+      const updated = await decideFlag(suggestion._id, flagId, decision);
+      // Prefer the server's response if it returns the updated suggestion.
+      // If it returns only the flag, merge locally.
+      if (updated && updated.flags) {
+        setSuggestion(updated);
+      } else {
+        setSuggestion((prev) =>
+          prev
+            ? {
+                ...prev,
+                flags: prev.flags.map((f) =>
+                  f._id === flagId ? { ...f, decision } : f,
+                ),
+              }
+            : prev,
+        );
+      }
+    } catch (err) {
+      setPrecheckError(err.message);
+    } finally {
+      setIsDecidingFlag(false);
+    }
+  };
+
   if (status === "loading") {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 6 }}>
@@ -134,10 +191,59 @@ export default function ReviewPage() {
     );
   }
 
+  const openReturn = () => {
+    setDecisionNote("");
+    setDecisionError("");
+    setReturnOpen(true);
+  };
+  const openReject = () => {
+    setDecisionNote("");
+    setDecisionError("");
+    setRejectOpen(true);
+  };
+
+  const submitDecision = async (kind) => {
+    setDecisionError("");
+    if (!decisionNote.trim()) {
+      setDecisionError("Please write a note for the parent.");
+      return;
+    }
+    setIsSubmittingDecision(true);
+    try {
+      if (kind === "return") {
+        await returnRegistrationApi(registrationId, decisionNote.trim());
+      } else {
+        await rejectRegistrationApi(registrationId, decisionNote.trim());
+      }
+      setDecisionDone({
+        type: kind,
+        status: kind === "return" ? "returned" : "rejected",
+      });
+      setData((d) =>
+        d
+          ? {
+              ...d,
+              registration: {
+                ...d.registration,
+                status: kind === "return" ? "returned" : "rejected",
+                reviewerNotes: decisionNote.trim(),
+              },
+            }
+          : d,
+      );
+      setReturnOpen(false);
+      setRejectOpen(false);
+    } catch (err) {
+      setDecisionError(err.message);
+    } finally {
+      setIsSubmittingDecision(false);
+    }
+  };
+
   const { registration, applicant, baby } = data;
   const motherLast = baby.mother?.lastName;
   const fatherLast = baby.father?.lastName;
-  const canApprove = registration.status === "pending" && !approved;
+  const canDecide = registration.status === "pending";
 
   return (
     <Box sx={{ maxWidth: 1200, mx: "auto", mt: 4, px: 2 }}>
@@ -151,18 +257,36 @@ export default function ReviewPage() {
           Review application
         </Typography>
         <StatusBadge status={registration.status} />
-        {canApprove && (
-          <Button
-            variant="contained"
-            color="success"
-            onClick={() => {
-              setApproveError("");
-              setApproveOpen(true);
-            }}
-            sx={{ ml: "auto" }}
-          >
-            Approve
-          </Button>
+        {canDecide && (
+          <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
+            <Button
+              variant="outlined"
+              color="warning"
+              onClick={openReturn}
+              type="button"
+            >
+              Return for correction
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={openReject}
+              type="button"
+            >
+              Reject
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={() => {
+                setApproveError("");
+                setApproveOpen(true);
+              }}
+              type="button"
+            >
+              Approve
+            </Button>
+          </Stack>
         )}
       </Stack>
 
@@ -186,6 +310,17 @@ export default function ReviewPage() {
         </Alert>
       )}
 
+      {decisionDone && (
+        <Alert
+          severity={decisionDone.type === "return" ? "warning" : "error"}
+          sx={{ mb: 2 }}
+        >
+          {decisionDone.type === "return"
+            ? "Application returned to the parent for correction."
+            : "Application rejected. This decision is final."}
+        </Alert>
+      )}
+
       <Grid container spacing={2}>
         {/* LEFT — the application */}
         <Grid item xs={12} md={6}>
@@ -195,8 +330,8 @@ export default function ReviewPage() {
                 Application
               </Typography>
               <Typography variant="body2">
-                <strong>Proposed name:</strong>{" "}
-                {registration.proposedFirstName} {registration.proposedLastName}
+                <strong>Proposed name:</strong> {registration.proposedFirstName}{" "}
+                {registration.proposedLastName}
               </Typography>
               <Typography variant="body2">
                 <strong>Address:</strong> {registration.residentialAddress}
@@ -245,8 +380,9 @@ export default function ReviewPage() {
                 {baby.gender === "M" ? "Male" : "Female"}
               </Typography>
               <Typography variant="body2">
-                <strong>Weight / length:</strong> {orDash(baby.birthWeightGrams)}{" "}
-                g / {orDash(baby.birthLengthCm)} cm
+                <strong>Weight / length:</strong>{" "}
+                {orDash(baby.birthWeightGrams)} g / {orDash(baby.birthLengthCm)}{" "}
+                cm
               </Typography>
               <Typography variant="body2">
                 <strong>Family type:</strong> {baby.familyType}
@@ -330,6 +466,24 @@ export default function ReviewPage() {
         </CardContent>
       </Card>
 
+      <PrecheckPanel
+        suggestion={suggestion}
+        onRun={handleRunPrecheck}
+        onDecide={handleDecideFlag}
+        isRunning={isRunningPrecheck}
+        isDeciding={isDecidingFlag}
+        error={precheckError}
+      />
+
+      <Card sx={{ mt: 2 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Application history
+          </Typography>
+          <StatusTimeline history={registration.statusHistory} />
+        </CardContent>
+      </Card>
+
       <Dialog
         open={approveOpen}
         onClose={() => !isApproving && setApproveOpen(false)}
@@ -365,6 +519,101 @@ export default function ReviewPage() {
             type="button"
           >
             {isApproving ? "Approving…" : "Approve"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={returnOpen}
+        onClose={() => !isSubmittingDecision && setReturnOpen(false)}
+        aria-labelledby="return-dialog-title"
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle id="return-dialog-title">
+          Return for correction
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            The parent can edit the application and resubmit it. The note is
+            required.
+          </DialogContentText>
+          <TextField
+            label="Note to the parent"
+            value={decisionNote}
+            onChange={(e) => setDecisionNote(e.target.value)}
+            multiline
+            minRows={3}
+            fullWidth
+            required
+            autoFocus
+            error={Boolean(decisionError)}
+            helperText={decisionError || "Explain what needs to change."}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setReturnOpen(false)}
+            disabled={isSubmittingDecision}
+            type="button"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => submitDecision("return")}
+            disabled={isSubmittingDecision}
+            type="button"
+          >
+            {isSubmittingDecision ? "Sending…" : "Return"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={rejectOpen}
+        onClose={() => !isSubmittingDecision && setRejectOpen(false)}
+        aria-labelledby="reject-dialog-title"
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle id="reject-dialog-title">
+          Reject this application?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Are you sure? This is final. The parent cannot resubmit a rejected
+            application.
+          </DialogContentText>
+          <TextField
+            label="Note to the parent"
+            value={decisionNote}
+            onChange={(e) => setDecisionNote(e.target.value)}
+            multiline
+            minRows={3}
+            fullWidth
+            required
+            autoFocus
+            error={Boolean(decisionError)}
+            helperText={decisionError || "Explain why this is rejected."}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setRejectOpen(false)}
+            disabled={isSubmittingDecision}
+            type="button"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => submitDecision("reject")}
+            disabled={isSubmittingDecision}
+            type="button"
+          >
+            {isSubmittingDecision ? "Rejecting…" : "Reject"}
           </Button>
         </DialogActions>
       </Dialog>

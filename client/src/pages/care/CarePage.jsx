@@ -33,12 +33,12 @@ import {
   getMilestones,
 } from "../../services/careService";
 import {
+  dayRange,
   formatDate,
   formatDateTime,
   toDateInput,
   toDateTimeInput,
   toIso,
-  todayRange,
 } from "../../utils/dates";
 
 const CATEGORY_OPTIONS = [
@@ -144,6 +144,11 @@ export default function CarePage() {
   const [diaryFieldErrors, setDiaryFieldErrors] = useState({});
   const [isSavingDiary, setIsSavingDiary] = useState(false);
 
+  // Story 5.6: Selected date for viewing diary (defaults to today)
+  const [selectedDate, setSelectedDate] = useState(() =>
+    toDateInput(new Date().toISOString()),
+  );
+
   // Delete dialog state
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -166,9 +171,10 @@ export default function CarePage() {
   const [milestoneFieldErrors, setMilestoneFieldErrors] = useState({});
   const [isSavingMilestone, setIsSavingMilestone] = useState(false);
 
+  // Fetch diary entries whenever babyId or selectedDate changes
   useEffect(() => {
     let ignore = false;
-    const { from, to } = todayRange();
+    const { from, to } = dayRange(selectedDate);
 
     getDiaryEntries(babyId, from, to)
       .then((data) => {
@@ -187,7 +193,7 @@ export default function CarePage() {
     return () => {
       ignore = true;
     };
-  }, [babyId]);
+  }, [babyId, selectedDate]);
 
   useEffect(() => {
     let ignore = false;
@@ -278,7 +284,7 @@ export default function CarePage() {
 
     try {
       await createDiaryEntry(babyId, buildDiaryPayload());
-      const { from, to } = todayRange();
+      const { from, to } = dayRange(selectedDate);
       const updated = await getDiaryEntries(babyId, from, to);
       setEntries(updated);
       setDiaryStatus("ready");
@@ -298,7 +304,7 @@ export default function CarePage() {
     setIsDeleting(true);
     try {
       await deleteDiaryEntry(babyId, deleteTargetId);
-      const { from, to } = todayRange();
+      const { from, to } = dayRange(selectedDate);
       const updated = await getDiaryEntries(babyId, from, to);
       setEntries(updated);
       setDeleteTargetId(null);
@@ -384,6 +390,9 @@ export default function CarePage() {
       setIsSavingMilestone(false);
     }
   };
+
+  const todayStr = toDateInput(new Date().toISOString());
+  const isToday = selectedDate === todayStr;
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -547,16 +556,46 @@ export default function CarePage() {
 
         <Divider sx={{ my: 3 }} />
 
-        <Typography variant="h6" component="h3" gutterBottom>
-          Today&apos;s entries
-        </Typography>
+        {/* Story 5.6: Date picker and dynamic header */}
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          justifyContent="space-between"
+          alignItems={{ xs: "stretch", sm: "center" }}
+          spacing={2}
+          sx={{ mb: 2 }}
+        >
+          <Typography variant="h6" component="h3">
+            {isToday
+              ? "Today's entries"
+              : `Diary for ${formatDate(toIso(selectedDate))}`}
+          </Typography>
+
+          <TextField
+            label="View date"
+            type="date"
+            size="small"
+            value={selectedDate}
+            onChange={(e) => {
+              setDiaryStatus("loading");
+              setSelectedDate(e.target.value);
+            }}
+            slotProps={{
+              inputLabel: { shrink: true },
+              htmlInput: { max: todayStr },
+            }}
+          />
+        </Stack>
 
         {diaryStatus === "loading" && <CircularProgress aria-label="Loading" />}
         {diaryStatus === "error" && (
           <Alert severity="error">{diaryLoadError}</Alert>
         )}
         {diaryStatus === "ready" && entries.length === 0 && (
-          <Typography color="text.secondary">No diary entries yet.</Typography>
+          <Typography color="text.secondary">
+            {isToday
+              ? "No diary entries yet."
+              : `No diary entries on this day.`}
+          </Typography>
         )}
         {diaryStatus === "ready" && entries.length > 0 && (
           <List disablePadding>
@@ -821,7 +860,7 @@ export default function CarePage() {
               onChange={handleMilestoneChange}
               error={Boolean(milestoneFieldErrors.notes)}
               helperText={
-                milestoneFieldErrors.notes || "Optional (max 500 characters)"
+                milestoneFormError || "Optional (max 500 characters)"
               }
               slotProps={{ htmlInput: { maxLength: 500 } }}
               multiline
