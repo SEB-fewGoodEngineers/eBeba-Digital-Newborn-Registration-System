@@ -25,6 +25,9 @@ import ReviewPage from "./pages/moi/ReviewPage";
 // N2 - DEMO INBOX
 import InboxPage from "./pages/inbox/InboxPage";
 
+// STORY 4.4 - APPOINTMENTS
+import AppointmentsPage from "./pages/health/AppointmentsPage";
+
 // STORY 1.2 - LINK MY BABY
 import LinkBabyPage from "./pages/registration/LinkBabyPage";
 import MyBabiesPage from "./pages/registration/MyBabiesPage";
@@ -198,6 +201,16 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.MOI_STAFF]}>
                 <ReviewPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 4.4 - APPOINTMENTS */}
+          <Route
+            path="/babies/:babyId/appointments"
+            element={
+              <RequireRole roles={[ROLES.PARENT, ROLES.PEDIATRICIAN]}>
+                <AppointmentsPage />
               </RequireRole>
             }
           />

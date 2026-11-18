@@ -183,6 +183,15 @@ export default function DashboardPage() {
                       BabyHealth
                     </Button>
 
+                    {/* STORY 4.4 - APPOINTMENTS */}
+                    <Button
+                      component={RouterLink}
+                      to={`/babies/${baby._id}/appointments`}
+                      variant="outlined"
+                    >
+                      Check-ups
+                    </Button>
+
                     <Button
                       component={RouterLink}
                       to={`/babies/${baby._id}/care`}
