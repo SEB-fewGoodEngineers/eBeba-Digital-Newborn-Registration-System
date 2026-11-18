@@ -19,10 +19,14 @@ import CswCasesPage from "./pages/csw/CswCasesPage";
 import ApplyPage from "./pages/registration/ApplyPage";
 import QueuePage from "./pages/moi/QueuePage";
 import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
+import DashboardPage from "./pages/dashboard/DashboardPage";
 import ReviewPage from "./pages/moi/ReviewPage";
 
 // STORY 4.3 - VACCINATIONS
 import VaccinationsPage from "./pages/health/VaccinationsPage";
+
+// N2 - DEMO INBOX
+import InboxPage from "./pages/inbox/InboxPage";
 
 // STORY 1.2 - LINK MY BABY
 import LinkBabyPage from "./pages/registration/LinkBabyPage";
@@ -133,6 +137,16 @@ export default function App() {
             }
           />
 
+          {/* STORY 4.2 - PARENT DASHBOARD */}
+          <Route
+            path="/dashboard"
+            element={
+              <RequireRole roles={[ROLES.PARENT]}>
+                <DashboardPage />
+              </RequireRole>
+            }
+          />
+
           {/* STORY 4.1 - MEDICAL RECORDS */}
           <Route
             path="/babies/:babyId/medical-records"
@@ -197,6 +211,16 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.MOI_STAFF]}>
                 <ReviewPage />
+              </RequireRole>
+            }
+          />
+
+          {/* N2 - DEMO INBOX (any signed-in user) */}
+          <Route
+            path="/inbox"
+            element={
+              <RequireRole>
+                <InboxPage />
               </RequireRole>
             }
           />
