@@ -10,6 +10,7 @@ const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
 const { ROLES, ENTRY_SOURCES } = require("../constants");
+const { notifyParents } = require("../services/notifications");
 const {
   createMedicalRecordSchema,
   updateMedicalRecordSchema,
@@ -59,6 +60,14 @@ router.post(
       targetDocumentId: record._id,
       changes: { after: record },
     });
+
+    // STORY 4.5: the parents are told when the pediatrician adds an entry
+    if (req.user.role === ROLES.PEDIATRICIAN) {
+      await notifyParents(req.baby, {
+        type: "medical_record.added_by_pediatrician",
+      });
+    }
+
     res.status(201).json(record);
   }),
 );
