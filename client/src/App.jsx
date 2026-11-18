@@ -82,6 +82,7 @@ export default function App() {
             }
           />
 
+          {/* STORY 1.1 - HOSPITAL BIRTH RECORDS */}
           <Route
             path="/hospital/babies"
             element={
@@ -93,6 +94,16 @@ export default function App() {
 
           <Route
             path="/hospital/babies/new"
+            element={
+              <RequireRole roles={[ROLES.HOSPITAL_STAFF]}>
+                <RecordBirthPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 1.4 - CORRECT A BIRTH RECORD */}
+          <Route
+            path="/hospital/babies/:babyId/edit"
             element={
               <RequireRole roles={[ROLES.HOSPITAL_STAFF]}>
                 <RecordBirthPage />

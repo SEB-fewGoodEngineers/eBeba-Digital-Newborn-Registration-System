@@ -63,9 +63,13 @@ export default function HospitalBirthListPage() {
         Record a birth
       </Button>
 
-      {status === "loading" && <CircularProgress aria-label="Loading" />}
+      {status === "loading" && (
+        <CircularProgress aria-label="Loading" />
+      )}
 
-      {status === "error" && <Alert severity="error">{error}</Alert>}
+      {status === "error" && (
+        <Alert severity="error">{error}</Alert>
+      )}
 
       {status === "ready" && babies.length === 0 && (
         <Typography>No birth records yet.</Typography>
@@ -83,13 +87,16 @@ export default function HospitalBirthListPage() {
                 <TableCell>Municipality</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>JMBG</TableCell>
+                <TableCell>Action</TableCell>
               </TableRow>
             </TableHead>
 
             <TableBody>
               {babies.map((baby) => (
                 <TableRow key={baby._id}>
-                  <TableCell>{baby.birthRecordNumber}</TableCell>
+                  <TableCell>
+                    {baby.birthRecordNumber}
+                  </TableCell>
 
                   <TableCell>
                     {formatDateTime(baby.birthDateTime)}
@@ -100,23 +107,45 @@ export default function HospitalBirthListPage() {
                   </TableCell>
 
                   <TableCell>
-                    {baby.mother.firstName} {baby.mother.lastName}
+                    {baby.mother.firstName}{" "}
+                    {baby.mother.lastName}
                   </TableCell>
 
-                  <TableCell>{baby.municipalityOfBirth}</TableCell>
+                  <TableCell>
+                    {baby.municipalityOfBirth}
+                  </TableCell>
 
                   <TableCell>
                     <StatusBadge
-                      status={baby.registrationStatus || "Not applied"}
+                      status={
+                        baby.registrationStatus || "Not applied"
+                      }
                     />
                   </TableCell>
 
                   <TableCell>
-                    {baby.registrationStatus === "approved" && baby.jmbg ? (
+                    {baby.registrationStatus === "approved" &&
+                    baby.jmbg ? (
                       <>
                         {baby.jmbg}
                         <DemoBadge />
                       </>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
+
+                  {/* STORY 1.4 - CORRECT A BIRTH RECORD */}
+                  <TableCell>
+                    {!baby.registrationStatus ? (
+                      <Button
+                        component={Link}
+                        to={`/hospital/babies/${baby._id}/edit`}
+                        variant="outlined"
+                        size="small"
+                      >
+                        Edit
+                      </Button>
                     ) : (
                       "—"
                     )}
