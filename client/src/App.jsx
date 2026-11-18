@@ -22,6 +22,9 @@ import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import ReviewPage from "./pages/moi/ReviewPage";
 
+// N2 - DEMO INBOX
+import InboxPage from "./pages/inbox/InboxPage";
+
 // STORY 1.2 - LINK MY BABY
 import LinkBabyPage from "./pages/registration/LinkBabyPage";
 import MyBabiesPage from "./pages/registration/MyBabiesPage";
@@ -195,6 +198,16 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.MOI_STAFF]}>
                 <ReviewPage />
+              </RequireRole>
+            }
+          />
+
+          {/* N2 - DEMO INBOX (any signed-in user) */}
+          <Route
+            path="/inbox"
+            element={
+              <RequireRole>
+                <InboxPage />
               </RequireRole>
             }
           />

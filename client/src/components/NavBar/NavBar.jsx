@@ -3,6 +3,7 @@ import { Link as RouterLink, useNavigate } from "react-router";
 import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
 import { useUser } from "../../contexts/UserContext";
 import { ROLE_LABELS, ROLES } from "../../constants/labels";
+import NotificationBell from "../NotificationBell/NotificationBell";
 
 export default function NavBar() {
   // Fixed from the template: setUser was used in sign-out but never taken from the context
@@ -60,6 +61,19 @@ export default function NavBar() {
                 </Button>
               </>
             )}
+
+            {/* N2 - DEMO INBOX AND NOTIFICATION BELL */}
+            <Button
+              color="inherit"
+              component={RouterLink}
+              to="/inbox"
+              sx={{ display: { xs: "none", sm: "inline-flex" } }}
+            >
+              Inbox
+            </Button>
+
+            {/* A new key per user: no notifications from the last user stay visible */}
+            <NotificationBell key={user._id} />
 
             <Button color="inherit" onClick={handleSignOut}>
               Sign out
