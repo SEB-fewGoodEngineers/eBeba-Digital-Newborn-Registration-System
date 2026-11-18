@@ -21,6 +21,9 @@ import QueuePage from "./pages/moi/QueuePage";
 import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
 import ReviewPage from "./pages/moi/ReviewPage";
 
+// STORY 4.3 - VACCINATIONS
+import VaccinationsPage from "./pages/health/VaccinationsPage";
+
 // STORY 1.2 - LINK MY BABY
 import LinkBabyPage from "./pages/registration/LinkBabyPage";
 import MyBabiesPage from "./pages/registration/MyBabiesPage";
@@ -136,6 +139,16 @@ export default function App() {
             element={
               <RequireRole roles={[ROLES.PARENT, ROLES.PEDIATRICIAN]}>
                 <MedicalRecordsPage />
+              </RequireRole>
+            }
+          />
+
+          {/* STORY 4.3 - VACCINATIONS */}
+          <Route
+            path="/babies/:babyId/vaccinations"
+            element={
+              <RequireRole roles={[ROLES.PARENT, ROLES.PEDIATRICIAN]}>
+                <VaccinationsPage />
               </RequireRole>
             }
           />
