@@ -475,15 +475,6 @@ export default function ReviewPage() {
         error={precheckError}
       />
 
-            <PrecheckPanel
-        suggestion={suggestion}
-        onRun={handleRunPrecheck}
-        onDecide={handleDecideFlag}
-        isRunning={isRunningPrecheck}
-        isDeciding={isDecidingFlag}
-        error={precheckError}
-      />
-
       <Card sx={{ mt: 2 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
