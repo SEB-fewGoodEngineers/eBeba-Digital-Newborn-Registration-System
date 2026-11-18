@@ -13,6 +13,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from "@mui/material";
 
@@ -23,30 +24,40 @@ import DemoBadge from "../../components/DemoBadge/DemoBadge";
 
 export default function HospitalBirthListPage() {
   const [babies, setBabies] = useState([]);
+  const [search, setSearch] = useState("");
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
 
   useEffect(() => {
     let ignore = false;
 
-    getBabies()
-      .then((data) => {
-        if (!ignore) {
-          setBabies(data);
-          setStatus("ready");
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          setError(err.message);
-          setStatus("error");
-        }
-      });
+    const timer = setTimeout(() => {
+      getBabies(search)
+        .then((data) => {
+          if (!ignore) {
+            setBabies(data);
+            setStatus("ready");
+          }
+        })
+        .catch((err) => {
+          if (!ignore) {
+            setError(err.message);
+            setStatus("error");
+          }
+        });
+    }, 300);
 
     return () => {
       ignore = true;
+      clearTimeout(timer);
     };
-  }, []);
+  }, [search]);
+
+  function handleSearch(event) {
+    setSearch(event.target.value);
+    setStatus("loading");
+    setError("");
+  }
 
   return (
     <Box sx={{ p: 3 }}>
@@ -63,12 +74,30 @@ export default function HospitalBirthListPage() {
         Record a birth
       </Button>
 
-      {status === "loading" && <CircularProgress aria-label="Loading" />}
+      {/* STORY 1.5 - SEARCH THE HOSPITAL LIST */}
+      <TextField
+        label="Search by mother's last name or record number"
+        value={search}
+        onChange={handleSearch}
+        fullWidth
+        size="small"
+        sx={{ mb: 3 }}
+      />
 
-      {status === "error" && <Alert severity="error">{error}</Alert>}
+      {status === "loading" && (
+        <CircularProgress aria-label="Loading" />
+      )}
+
+      {status === "error" && (
+        <Alert severity="error">{error}</Alert>
+      )}
 
       {status === "ready" && babies.length === 0 && (
-        <Typography>No birth records yet.</Typography>
+        <Typography>
+          {search
+            ? "No matching birth records found."
+            : "No birth records yet."}
+        </Typography>
       )}
 
       {status === "ready" && babies.length > 0 && (
