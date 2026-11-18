@@ -17,6 +17,7 @@ const diaryEntriesRouter = require("./controllers/diaryEntries");
 const growthMeasurementsRouter = require("./controllers/growthMeasurements");
 const milestonesRouter = require("./controllers/milestones");
 const medicalRecordsRouter = require("./controllers/medicalRecords");
+const pediatricianRouter = require("./controllers/pediatrician"); // STORY 4.5
 const adminRouter = require("./controllers/admin");
 const vaccinationsRouter = require("./controllers/vaccinations");
 const notificationsRouter = require("./controllers/notifications");
@@ -52,6 +53,7 @@ app.use("/insurance-records", require("./controllers/insuranceRecords"));
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/admin", adminRouter);
+app.use("/pediatrician", pediatricianRouter); // STORY 4.5
 app.use("/csw-cases", require("./controllers/cswCases"));
 app.use("/registrations", registrationRouter);
 app.use("/babies", babiesRouter);

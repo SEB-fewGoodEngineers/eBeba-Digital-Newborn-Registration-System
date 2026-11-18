@@ -35,6 +35,17 @@ export default function NavBar() {
               </Button>
             )}
 
+            {/* STORY 4.5 - PEDIATRICIAN */}
+            {user.role === ROLES.PEDIATRICIAN && (
+              <Button
+                color="inherit"
+                component={RouterLink}
+                to="/pediatrician/babies"
+              >
+                My babies
+              </Button>
+            )}
+
             <Box
               component="span"
               sx={{ display: { xs: "none", sm: "inline" }, mr: 1 }}

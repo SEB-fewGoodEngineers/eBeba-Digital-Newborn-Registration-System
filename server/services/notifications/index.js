@@ -84,9 +84,26 @@ const notifyMany = async (userIds, notification) => {
   );
 };
 
+// Tell a baby's linked parents about a change (Story 4.5).
+// The change is already saved, so a failed delivery only writes to the log.
+const notifyParents = async (baby, { type, link = "/dashboard" }) => {
+  const parentIds = baby?.authorizedUserIds || [];
+  if (parentIds.length === 0) {
+    return [];
+  }
+
+  try {
+    return await notifyMany(parentIds, { type, link, babyId: baby._id });
+  } catch {
+    console.error("Parent notification failed.");
+    return [];
+  }
+};
+
 module.exports = {
   notify,
   notifyMany,
+  notifyParents,
   setSocketServer,
   disconnectNotificationUser,
 };
