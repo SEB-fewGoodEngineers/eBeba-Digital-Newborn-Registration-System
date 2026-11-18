@@ -24,6 +24,7 @@ import {
 } from "@mui/material";
 
 import { useUser } from "../../contexts/UserContext";
+import CalendarExportButton from "../../components/CalendarExportButton/CalendarExportButton";
 import { ROLES } from "../../constants/labels";
 import {
   createVaccination,
@@ -262,14 +263,15 @@ export default function VaccinationsPage() {
             Scheduled and given vaccinations. Demo schedule only.
           </Typography>
         </Box>
-        <Box>
+        <Stack spacing={1} sx={{ alignItems: { sm: "flex-end" } }}>
+          <CalendarExportButton babyId={babyId} />
           <Button
             component={RouterLink}
             to={`/babies/${babyId}/medical-records`}
           >
             Medical records
           </Button>
-        </Box>
+        </Stack>
       </Stack>
 
       {status === "loading" && <CircularProgress aria-label="Loading" />}

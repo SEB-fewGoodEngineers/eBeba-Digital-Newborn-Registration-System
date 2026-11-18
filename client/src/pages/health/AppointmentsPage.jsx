@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 
 import StatusBadge from "../../components/StatusBadge/StatusBadge";
+import CalendarExportButton from "../../components/CalendarExportButton/CalendarExportButton";
 import {
   createAppointment,
   getAppointments,
@@ -229,14 +230,15 @@ export default function AppointmentsPage() {
             Upcoming and past check-ups. Demo data only.
           </Typography>
         </Box>
-        <Box>
+        <Stack spacing={1} sx={{ alignItems: { sm: "flex-end" } }}>
+          <CalendarExportButton babyId={babyId} />
           <Button
             component={RouterLink}
             to={`/babies/${babyId}/medical-records`}
           >
             Medical records
           </Button>
-        </Box>
+        </Stack>
       </Stack>
 
       {status === "loading" && <CircularProgress aria-label="Loading" />}
