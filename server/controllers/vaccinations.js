@@ -10,6 +10,7 @@ const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
 const { ROLES, ENTRY_SOURCES } = require("../constants");
+const { notifyParents } = require("../services/notifications");
 const {
   createVaccinationSchema,
   markVaccinationGivenSchema,
@@ -62,6 +63,14 @@ router.post(
       targetDocumentId: vaccination._id,
       changes: { after: vaccination },
     });
+
+    // STORY 4.5: the parents are told when the pediatrician adds one
+    if (req.user.role === ROLES.PEDIATRICIAN) {
+      await notifyParents(req.baby, {
+        type: "vaccination.added_by_pediatrician",
+      });
+    }
+
     res.status(201).json(vaccination);
   }),
 );

@@ -13,6 +13,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from "@mui/material";
 
@@ -23,30 +24,40 @@ import DemoBadge from "../../components/DemoBadge/DemoBadge";
 
 export default function HospitalBirthListPage() {
   const [babies, setBabies] = useState([]);
+  const [search, setSearch] = useState("");
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
 
   useEffect(() => {
     let ignore = false;
 
-    getBabies()
-      .then((data) => {
-        if (!ignore) {
-          setBabies(data);
-          setStatus("ready");
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          setError(err.message);
-          setStatus("error");
-        }
-      });
+    const timer = setTimeout(() => {
+      getBabies(search)
+        .then((data) => {
+          if (!ignore) {
+            setBabies(data);
+            setStatus("ready");
+          }
+        })
+        .catch((err) => {
+          if (!ignore) {
+            setError(err.message);
+            setStatus("error");
+          }
+        });
+    }, 300);
 
     return () => {
       ignore = true;
+      clearTimeout(timer);
     };
-  }, []);
+  }, [search]);
+
+  function handleSearch(event) {
+    setSearch(event.target.value);
+    setStatus("loading");
+    setError("");
+  }
 
   return (
     <Box sx={{ p: 3 }}>
@@ -63,6 +74,16 @@ export default function HospitalBirthListPage() {
         Record a birth
       </Button>
 
+      {/* STORY 1.5 - SEARCH THE HOSPITAL LIST */}
+      <TextField
+        label="Search by mother's last name or record number"
+        value={search}
+        onChange={handleSearch}
+        fullWidth
+        size="small"
+        sx={{ mb: 3 }}
+      />
+
       {status === "loading" && (
         <CircularProgress aria-label="Loading" />
       )}
@@ -72,7 +93,11 @@ export default function HospitalBirthListPage() {
       )}
 
       {status === "ready" && babies.length === 0 && (
-        <Typography>No birth records yet.</Typography>
+        <Typography>
+          {search
+            ? "No matching birth records found."
+            : "No birth records yet."}
+        </Typography>
       )}
 
       {status === "ready" && babies.length > 0 && (
@@ -94,9 +119,7 @@ export default function HospitalBirthListPage() {
             <TableBody>
               {babies.map((baby) => (
                 <TableRow key={baby._id}>
-                  <TableCell>
-                    {baby.birthRecordNumber}
-                  </TableCell>
+                  <TableCell>{baby.birthRecordNumber}</TableCell>
 
                   <TableCell>
                     {formatDateTime(baby.birthDateTime)}
@@ -111,21 +134,16 @@ export default function HospitalBirthListPage() {
                     {baby.mother.lastName}
                   </TableCell>
 
-                  <TableCell>
-                    {baby.municipalityOfBirth}
-                  </TableCell>
+                  <TableCell>{baby.municipalityOfBirth}</TableCell>
 
                   <TableCell>
                     <StatusBadge
-                      status={
-                        baby.registrationStatus || "Not applied"
-                      }
+                      status={baby.registrationStatus || "Not applied"}
                     />
                   </TableCell>
 
                   <TableCell>
-                    {baby.registrationStatus === "approved" &&
-                    baby.jmbg ? (
+                    {baby.registrationStatus === "approved" && baby.jmbg ? (
                       <>
                         {baby.jmbg}
                         <DemoBadge />
