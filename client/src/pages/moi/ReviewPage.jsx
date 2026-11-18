@@ -310,6 +310,24 @@ export default function ReviewPage() {
         </Alert>
       )}
 
+      {approved && approved.certificateId && (
+        <Button
+          variant="outlined"
+          onClick={async () => {
+            try {
+              await signCertificate(approved.certificateId);
+              setCertificateSigned(true);
+            } catch (err) {
+              setSignError(err.message);
+            }
+          }}
+          disabled={certificateSigned}
+          type="button"
+        >
+          {certificateSigned ? "Certificate signed" : "Sign certificate"}
+        </Button>
+      )}
+
       {decisionDone && (
         <Alert
           severity={decisionDone.type === "return" ? "warning" : "error"}

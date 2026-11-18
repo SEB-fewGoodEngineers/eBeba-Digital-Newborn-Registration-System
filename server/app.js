@@ -25,6 +25,7 @@ const dashboardRouter = require("./controllers/dashboard");
 const appointmentsRouter = require("./controllers/appointments");
 const calendarRouter = require("./controllers/calendar");
 
+const certificatesRouter = require("./controllers/certificates");
 const app = express();
 
 // Render runs the app behind one proxy; needed for correct IPs in the rate limiter
@@ -69,6 +70,7 @@ app.use("/dashboard", dashboardRouter);
 app.use("/babies/:babyId/appointments", appointmentsRouter);
 // STORY 4.6 - CALENDAR EXPORT
 app.use("/babies/:babyId/calendar.ics", calendarRouter);
+app.use("/certificates", certificatesRouter);
 
 // Unknown route
 app.use((req, res) => {
