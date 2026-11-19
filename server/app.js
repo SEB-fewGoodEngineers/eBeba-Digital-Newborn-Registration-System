@@ -26,6 +26,8 @@ const appointmentsRouter = require("./controllers/appointments");
 const calendarRouter = require("./controllers/calendar");
 
 const certificatesRouter = require("./controllers/certificates");
+const documentsRouter = require("./controllers/documents");
+
 const app = express();
 
 // Render runs the app behind one proxy; needed for correct IPs in the rate limiter
@@ -58,6 +60,7 @@ app.use("/admin", adminRouter);
 app.use("/pediatrician", pediatricianRouter); // STORY 4.5
 app.use("/csw-cases", require("./controllers/cswCases"));
 app.use("/registrations", registrationRouter);
+app.use("/babies/:babyId/documents", documentsRouter);
 app.use("/babies", babiesRouter);
 app.use("/babies/:babyId/diary-entries", diaryEntriesRouter);
 app.use("/babies/:babyId/growth-measurements", growthMeasurementsRouter);

@@ -4,7 +4,7 @@ const InsuranceRecord = require("../models/InsuranceRecord");
 const Baby = require("../models/Baby");
 const User = require("../models/User");
 const { verifyToken, requireRole } = require("../middleware/auth");
-const { pdf } = require("../services/documents");
+// const { pdf } = require("../services/documents");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
@@ -39,49 +39,49 @@ const findMyRecord = async (req, res) => {
   return record;
 };
 
-// DOWNLOAD THE INSURANCE CARD PDF (must stay BEFORE router.use below)
-// TODO Story 3.6: this route still has errors (parentUserIds, healthInsuranceNumber)
-// and will be replaced.
-router.get(
-  "/babies/:babyId/insurance-card/pdf",
-  verifyToken,
-  asyncHandler(async (req, res) => {
-    const baby = await Baby.findById(req.params.babyId);
-    if (!baby) {
-      return res.status(404).json({ err: "Baby not found." });
-    }
+// // DOWNLOAD THE INSURANCE CARD PDF (must stay BEFORE router.use below)
+// // TODO Story 3.6: this route still has errors (parentUserIds, healthInsuranceNumber=healthCardNumber)
+// // and will be replaced.
+// router.get(
+//   "/babies/:babyId/insurance-card/pdf",
+//   verifyToken,
+//   asyncHandler(async (req, res) => {
+//     const baby = await Baby.findById(req.params.babyId);
+//     if (!baby) {
+//       return res.status(404).json({ err: "Baby not found." });
+//     }
 
-    const isFzoStaff = req.user.role === ROLES.HEALTH_INSURANCE_STAFF;
-    const isParent =
-      req.user.role === ROLES.PARENT &&
-      baby.parentUserIds.some((id) => id.toString() === req.user._id.toString());
+//     const isFzoStaff = req.user.role === ROLES.HEALTH_INSURANCE_STAFF;
+//     const isParent =
+//       req.user.role === ROLES.PARENT &&
+//       baby.parentUserIds.some((id) => id.toString() === req.user._id.toString());
 
-    if (!isFzoStaff && !isParent) {
-      return res.status(403).json({ err: "Access denied." });
-    }
+//     if (!isFzoStaff && !isParent) {
+//       return res.status(403).json({ err: "Access denied." });
+//     }
 
-    const record = await InsuranceRecord.findOne({ babyId: baby._id });
-    if (!record || !record.healthInsuranceNumber) {
-      return res
-        .status(404)
-        .json({ err: "Health insurance card has not been issued yet." });
-    }
+//     const record = await InsuranceRecord.findOne({ babyId: baby._id });
+//     if (!record || !record.healthCardNumber) {
+//       return res
+//         .status(404)
+//         .json({ err: "Health insurance card has not been issued yet." });
+//     }
 
-    let pediatrician = null;
-    if (baby.assignedPediatricianId) {
-      pediatrician = await User.findById(baby.assignedPediatricianId).select(
-        "firstName lastName",
-      );
-    }
+//     let pediatrician = null;
+//     if (baby.assignedPediatricianId) {
+//       pediatrician = await User.findById(baby.assignedPediatricianId).select(
+//         "firstName lastName",
+//       );
+//     }
 
-    await pdf.card(res, {
-      type: "insurance",
-      baby,
-      record,
-      pediatrician,
-    });
-  }),
-);
+//     await pdf.card(res, {
+//       type: "insurance",
+//       baby,
+//       record,
+//       pediatrician,
+//     });
+//   }),
+// );
 
 // ALL ROUTES BELOW ARE ONLY FOR FZO STAFF
 router.use(verifyToken, requireRole(ROLES.HEALTH_INSURANCE_STAFF));

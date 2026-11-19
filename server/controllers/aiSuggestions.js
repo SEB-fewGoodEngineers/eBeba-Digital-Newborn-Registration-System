@@ -1,96 +1,100 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const AiSuggestion = require("../models/AiSuggestion");
 const Registration = require("../models/Registration");
 const Baby = require("../models/Baby");
+const User = require("../models/User");
 const { verifyToken, requireRole } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
 const ai = require("../services/ai");
-const { ROLES, AI_SUGGESTION_KINDS, AI_FLAG_SOURCES } = require("../constants");
+const { runRuleChecks } = require("../services/ai/rules");
+const {
+  ROLES,
+  AI_SUGGESTION_KINDS,
+  AI_FLAG_SOURCES,
+  REGISTRATION_STATUS,
+} = require("../constants");
 const { updateFlagSchema } = require("../validators/ai");
 
 const router = express.Router();
 
-// 1. POKRETANJE PRE-CHECK-a (MUP službenik)
+// RUN THE PRE-CHECK OF A REGISTRATION (MoI staff)
 router.post(
   "/registrations/:registrationId/precheck",
   verifyToken,
   requireRole(ROLES.MOI_STAFF),
   asyncHandler(async (req, res) => {
-    const registration = await Registration.findById(req.params.registrationId);
+    const { registrationId } = req.params;
+    const registration = mongoose.isValidObjectId(registrationId)
+      ? await Registration.findById(registrationId)
+      : null;
     if (!registration) {
       return res.status(404).json({ err: "Registration not found." });
     }
 
-    const baby = await Baby.findOne({ _id: registration.babyId });
+    if (registration.status !== REGISTRATION_STATUS.PENDING) {
+      return res
+        .status(409)
+        .json({ err: "Only a pending registration can be checked." });
+    }
+
+    const baby = await Baby.findById(registration.babyId);
     if (!baby) {
       return res.status(404).json({ err: "Baby birth record not found." });
     }
 
-    const flags = [];
+    const applicant = await User.findById(registration.submittedByUserId).select(
+      "firstName lastName",
+    );
 
-    // Pravilo 1: Provera polja
-    if (!registration.proposedFirstName || !registration.proposedLastName) {
-      flags.push({
-        field: "proposedName",
-        message: "Proposed first or last name is missing.",
-        source: AI_FLAG_SOURCES.RULE,
-      });
-    }
+    // 1. The rule checks come first (no AI)
+    const flags = runRuleChecks({ registration, baby, applicant });
 
-    // Pravilo 2: Prezime se poklapa sa bar jednim roditeljem
-    const motherLastName = baby.mother?.lastName?.toLowerCase();
-    const fatherLastName = baby.father?.lastName?.toLowerCase();
-    const proposedLastName = registration.proposedLastName?.toLowerCase();
+    // 2. The AI explains near-misses. It gets ONLY these three last names.
+    const aiResult = await ai.suggest(
+      AI_SUGGESTION_KINDS.REGISTRATION_PRECHECK,
+      {
+        proposedLastName: registration.proposedLastName,
+        motherLastName: baby.mother?.lastName,
+        fatherLastName: baby.father?.lastName,
+      },
+    );
 
-    if (
-      proposedLastName &&
-      motherLastName &&
-      fatherLastName &&
-      proposedLastName !== motherLastName &&
-      proposedLastName !== fatherLastName
-    ) {
-      flags.push({
-        field: "proposedLastName",
-        message: "The proposed last name does not match either parent's last name.",
-        source: AI_FLAG_SOURCES.RULE,
-      });
-    }
-
-    // Poziv AI servisa za bliže analize (bliske greške, npr. č/ć)
-    const aiResult = await ai.suggest(AI_SUGGESTION_KINDS.REGISTRATION_PRECHECK, {
-      proposedLastName: registration.proposedLastName,
-      motherLastName: baby.mother?.lastName,
-      fatherLastName: baby.father?.lastName,
-    });
-
-    if (aiResult.available && aiResult.flags) {
-      aiResult.flags.forEach((f) => {
+    if (aiResult.available) {
+      aiResult.flags.forEach((flag) => {
         flags.push({
-          field: f.field,
-          message: f.message,
+          field: flag.field,
+          message: flag.message,
           source: AI_FLAG_SOURCES.AI,
         });
       });
     }
 
-    // Čuvanje u bazi
+    // 3. Save one document. Every flag starts as "pending" (the model default).
     const suggestion = await AiSuggestion.create({
       kind: AI_SUGGESTION_KINDS.REGISTRATION_PRECHECK,
       registrationId: registration._id,
-      provider: aiResult.provider || "mock",
+      provider: aiResult.provider,
       model: aiResult.model,
       flags,
       aiAvailable: aiResult.available,
-      requestedByUserId: req.user._id,
+      requestedByUserId: req.user._id, // set by the server
+    });
+
+    await audit.log({
+      actor: req.user,
+      action: "ai_suggestion.create",
+      targetCollection: "aiSuggestions",
+      targetDocumentId: suggestion._id,
     });
 
     res.status(201).json(suggestion);
-  })
+  }),
 );
 
-// 2. AŽURIRANJE ODLUKE O ZASTAVICI (FLAG-u)
+// SAVE THE OFFICER'S DECISION ON ONE FLAG (accepted or dismissed)
 router.patch(
   "/ai-suggestions/:suggestionId/flags/:flagId",
   verifyToken,
@@ -98,21 +102,25 @@ router.patch(
   validate(updateFlagSchema),
   asyncHandler(async (req, res) => {
     const { suggestionId, flagId } = req.params;
-    const suggestion = await AiSuggestion.findById(suggestionId);
 
+    const suggestion = mongoose.isValidObjectId(suggestionId)
+      ? await AiSuggestion.findById(suggestionId)
+      : null;
     if (!suggestion) {
       return res.status(404).json({ err: "AI suggestion record not found." });
     }
 
-    const flag = suggestion.flags.id(flagId);
+    const flag = mongoose.isValidObjectId(flagId)
+      ? suggestion.flags.id(flagId)
+      : null;
     if (!flag) {
       return res.status(404).json({ err: "Flag not found." });
     }
 
-    flag.decision = req.body.decision;
-    flag.decidedByUserId = req.user._id;
-    flag.decidedAt = new Date();
-
+    const previousDecision = flag.decision;
+    flag.decision = req.body.decision; // already checked by Zod
+    flag.decidedByUserId = req.user._id; // who: set by the server
+    flag.decidedAt = new Date(); // when: set by the server
     await suggestion.save();
 
     await audit.log({
@@ -120,10 +128,14 @@ router.patch(
       action: "ai_suggestion.flag.update",
       targetCollection: "aiSuggestions",
       targetDocumentId: suggestion._id,
+      changes: {
+        before: { flagId, decision: previousDecision },
+        after: { flagId, decision: flag.decision },
+      },
     });
 
     res.status(200).json(suggestion);
-  })
+  }),
 );
 
 module.exports = router;

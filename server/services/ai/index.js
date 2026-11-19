@@ -1,86 +1,74 @@
 const { z } = require("zod");
 const { AI_SUGGESTION_KINDS } = require("../../constants");
 
-// Zod šema za validaciju odgovora AI provajdera
+const TIMEOUT_MS = 15000; // 15 seconds
+
+// What the AI is allowed to answer. The limits match the aiSuggestions model:
+// a message longer than 500 characters could not be saved later.
 const aiResponseSchema = z.object({
-  model: z.string().optional(),
-  flags: z.array(
-    z.object({
-      field: z.string(),
-      message: z.string(),
-    }),
-  ),
+  model: z.string().trim().max(100).optional(),
+  flags: z
+    .array(
+      z.object({
+        field: z.string().trim().min(1).max(100),
+        message: z.string().trim().min(1).max(500),
+      }),
+    )
+    .max(10),
 });
 
+// Rejects when the promise takes longer than `ms` milliseconds.
+// Works for every provider, not only for fetch.
+const withTimeout = (promise, ms) => {
+  let timerId;
+  const timeout = new Promise((_, reject) => {
+    timerId = setTimeout(
+      () => reject(new Error("AI request timed out.")),
+      ms,
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timerId));
+};
+
+// MOCK PROVIDER (AI1): always the same sample answer. No API key, no network.
+// It does not use the input, so the text never depends on what a user typed.
+const mockProvider = async () => ({
+  model: "mock-1",
+  flags: [
+    {
+      field: "proposedLastName",
+      message:
+        'The proposed last name "Vukovic" is very close to "Vuković". It may be missing the letter "ć".',
+    },
+  ],
+});
+
+// The real provider is added in story AI3, when we know which one to use.
+const PROVIDERS = { mock: mockProvider };
+
 /**
- * AI1 & AI3: Jedino mesto koje komunicira sa AI provajderom.
- * Podržava AI_PROVIDER=mock (AI1) i AI_PROVIDER=openai (AI3).
+ * The ONLY code that talks to an AI provider.
+ * Never throws. If anything goes wrong it returns { available: false, provider }.
  */
 const suggest = async (kind, input) => {
   const provider = process.env.AI_PROVIDER || "mock";
-  const timeoutMs = 15000; // Tajmaut od 15 sekundi
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    let rawResult;
-
-    if (provider === "mock") {
-      // AI1: Mock provajder sa fiksnim primerom
-      rawResult = await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({
-            model: "mock-1",
-            flags: [
-              {
-                field: "proposedLastName",
-                message: `The proposed last name "${input.proposedLastName}" is very close to the parents' last name. It may be missing a diacritic character like "ć".`,
-              },
-            ],
-          });
-        }, 200);
-      });
-    } else {
-      // AI3: Pravi provajder (konfiguriše se preko .env)
-      const apiKey = process.env.AI_API_KEY;
-      if (!apiKey) {
-        throw new Error("AI API key is missing in environment variables.");
-      }
-
-      const prompt = `You are a strict data validation assistant for a newborn registration system. 
-Analyze the following synthetic input data and return ONLY a valid JSON object with a "flags" array. Each flag must contain "field" and a single plain-English sentence "message" explaining the difference or issue. No markdown, no extra text.
-Input: ${JSON.stringify(input)}`;
-
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: process.env.AI_MODEL || "gpt-4o-mini",
-          messages: [{ role: "user", content: prompt }],
-          response_format: { type: "json_object" },
-        }),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(`AI provider error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      rawResult = JSON.parse(data.choices[0].message.content);
-      rawResult.model = process.env.AI_MODEL || "gpt-4o-mini";
+    if (!Object.values(AI_SUGGESTION_KINDS).includes(kind)) {
+      throw new Error("Unknown suggestion kind.");
+    }
+    if (!Object.hasOwn(PROVIDERS, provider)) {
+      throw new Error(`AI provider "${provider}" is not set up.`);
     }
 
-    clearTimeout(timeoutId);
+    const rawResult = await withTimeout(
+      PROVIDERS[provider](kind, input),
+      TIMEOUT_MS,
+    );
 
-    // Provera strukture odgovora pomoću Zod šeme
     const parsed = aiResponseSchema.safeParse(rawResult);
     if (!parsed.success) {
-      console.error("[AI Service] Invalid response shape from AI provider", parsed.error);
+      console.error("[AI service] The answer has a wrong shape.");
       return { available: false, provider };
     }
 
@@ -91,10 +79,10 @@ Input: ${JSON.stringify(input)}`;
       flags: parsed.data.flags,
     };
   } catch (err) {
-    console.error("[AI Service error or timeout]:", err.message);
+    // Only the error message is logged. The input is never logged.
+    console.error("[AI service] Not available:", err.message);
     return { available: false, provider };
   }
 };
 
-module.exports = { suggest };
-
+module.exports = { suggest, aiResponseSchema, withTimeout };
