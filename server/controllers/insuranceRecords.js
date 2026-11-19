@@ -3,6 +3,7 @@ const InsuranceRecord = require("../models/InsuranceRecord");
 const Baby = require("../models/Baby");
 const User = require("../models/User");
 const { verifyToken, requireRole } = require("../middleware/auth");
+const { pdf } = require("../services/documents");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
@@ -16,9 +17,51 @@ const {
 
 const router = express.Router();
 
+// 1. PREUZIMANJE PDF-a (MORA BITI PRVI - dozvoljava i FZO i roditelje)
+router.get(
+  "/babies/:babyId/insurance-card/pdf",
+  verifyToken,
+  asyncHandler(async (req, res) => {
+    const baby = await Baby.findById(req.params.babyId);
+    if (!baby) {
+      return res.status(404).json({ err: "Baby not found." });
+    }
+
+    const isFzoStaff = req.user.role === ROLES.HEALTH_INSURANCE_STAFF;
+    const isParent =
+      req.user.role === ROLES.PARENT &&
+      baby.parentUserIds.some((id) => id.toString() === req.user._id.toString());
+
+    if (!isFzoStaff && !isParent) {
+      return res.status(403).json({ err: "Access denied." });
+    }
+
+    const record = await InsuranceRecord.findOne({ babyId: baby._id });
+    if (!record || !record.healthInsuranceNumber) {
+      return res
+        .status(404)
+        .json({ err: "Health insurance card has not been issued yet." });
+    }
+
+    let pediatrician = null;
+    if (baby.assignedPediatricianId) {
+      pediatrician = await User.findById(baby.assignedPediatricianId).select(
+        "firstName lastName",
+      );
+    }
+
+    await pdf.card(res, {
+      type: "insurance",
+      baby,
+      record,
+      pediatrician,
+    });
+  }),
+);
+
+// ZAŠTITA ZA SVE OSTALE FZO RUTE (Samo FZO službenici)
 router.use(verifyToken, requireRole(ROLES.HEALTH_INSURANCE_STAFF));
 
-// GET FZO RECORDS FOR THE BRANCH
 router.get(
   "/",
   asyncHandler(async (req, res) => {
@@ -31,7 +74,6 @@ router.get(
   }),
 );
 
-// GET ACTIVE PEDIATRICIANS LIST (must be defined before /:recordId)
 router.get(
   "/pediatricians",
   asyncHandler(async (req, res) => {
@@ -46,7 +88,6 @@ router.get(
   }),
 );
 
-// GET A SINGLE FZO RECORD WITH BABY AND PARENTS
 router.get(
   "/:recordId",
   asyncHandler(async (req, res) => {
@@ -62,7 +103,6 @@ router.get(
   }),
 );
 
-// START PROCESSING AN INSURANCE RECORD
 router.post(
   "/:recordId/start",
   asyncHandler(async (req, res) => {
@@ -96,7 +136,6 @@ router.post(
   }),
 );
 
-// ISSUE CARDS AND INSURANCE
 router.post(
   "/:recordId/issue",
   validate(issueInsuranceSchema),
@@ -160,7 +199,6 @@ router.post(
   }),
 );
 
-// ASSIGN A PEDIATRICIAN TO THE BABY
 router.post(
   "/:recordId/pediatrician",
   validate(assignPediatricianSchema),
