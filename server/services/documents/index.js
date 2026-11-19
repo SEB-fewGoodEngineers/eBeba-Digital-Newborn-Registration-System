@@ -20,7 +20,18 @@ const certificate = async (res, { baby, certificate: cert }) => {
   );
 
   doc.pipe(res);
-
+    // Large diagonal DEMO watermark
+  doc.save();
+  doc.rotate(-45, { origin: [doc.page.width / 2, doc.page.height / 2] });
+  doc.fontSize(160).fillColor("#d9534f").fillOpacity(0.12);
+  doc.text("DEMO", 0, doc.page.height / 2 - 80, {
+    width: doc.page.width,
+    align: "center",
+  });
+  doc.restore();
+  doc.x = doc.page.margins.left; // start the real text at the top again
+  doc.y = doc.page.margins.top;
+  
   const font = getFontPath();
   if (font) doc.font(font);
 

@@ -1,6 +1,7 @@
 const express = require("express");
 const CswCase = require("../models/CswCase");
 const InsuranceRecord = require("../models/InsuranceRecord");
+const Certificate = require("../models/Certificate");
 const User = require("../models/User");
 const {
   verifyToken,
@@ -18,12 +19,41 @@ const {
 
 const router = express.Router({ mergeParams: true }); // gives access to :babyId
 
-// Only the parents of the baby (requireBabyAccess puts the baby on req.baby)
-router.use(verifyToken, requireRole(ROLES.PARENT), requireBabyAccess);
+// requireBabyAccess puts the baby on req.baby
+const parentOnly = [verifyToken, requireRole(ROLES.PARENT), requireBabyAccess];
+const certificateReaders = [
+  verifyToken,
+  requireRole(ROLES.PARENT, ROLES.HOSPITAL_STAFF, ROLES.MOI_STAFF),
+  requireBabyAccess,
+];
+
+// DOWNLOAD THE REGISTRATION CERTIFICATE PDF (made now, not stored)
+router.get(
+  "/certificate",
+  ...certificateReaders,
+  asyncHandler(async (req, res) => {
+    const certificate = await Certificate.findOne({ babyId: req.baby._id });
+    if (!certificate) {
+      return res
+        .status(404)
+        .json({ err: "The certificate has not been issued yet." });
+    }
+
+    await audit.log({
+      actor: req.user,
+      action: "certificate.download",
+      targetCollection: "certificates",
+      targetDocumentId: certificate._id,
+    });
+
+    await pdf.certificate(res, { baby: req.baby, certificate });
+  }),
+);
 
 // DOWNLOAD THE SOCIAL CARD PDF
 router.get(
   "/social-card",
+  ...parentOnly,
   asyncHandler(async (req, res) => {
     const cswCase = await CswCase.findOne({ babyId: req.baby._id });
     if (
@@ -50,6 +80,7 @@ router.get(
 // DOWNLOAD THE INSURED PERSON CARD PDF
 router.get(
   "/insured-person-card",
+  ...parentOnly,
   asyncHandler(async (req, res) => {
     const record = await InsuranceRecord.findOne({ babyId: req.baby._id });
     if (

@@ -211,21 +211,7 @@ export default function DashboardPage() {
                       : "Not assigned yet"}
                   </Typography>
                   <CardDownloads baby={baby} />
-                  {baby.isRegistrationApproved && (
-                    <Stack spacing={1} alignItems="flex-start">
-                      <Button variant="outlined" disabled>
-                        Download certificate
-                      </Button>
-
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                      >
-                        Certificate download is not available yet.
-                      </Typography>
-                    </Stack>
-                  )}
-
+           
                   <Stack
                     direction={{ xs: "column", sm: "row" }}
                     spacing={2}
