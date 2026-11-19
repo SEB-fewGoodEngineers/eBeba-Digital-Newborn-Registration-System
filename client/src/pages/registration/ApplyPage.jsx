@@ -17,6 +17,7 @@ import {
   getRegistrationByBaby,
   updateRegistration,
   resubmitRegistration,
+  downloadCertificate,
 } from "../../services/registrationService";
 import StatusBadge from "../../components/StatusBadge/StatusBadge";
 import StatusTimeline from "../../components/StatusTimeline/StatusTimeline";
@@ -44,6 +45,8 @@ export default function ApplyPage() {
   const [editError, setEditError] = useState("");
   const [editFieldErrors, setEditFieldErrors] = useState({});
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
 
   useEffect(() => {
     let ignore = false;
@@ -114,7 +117,9 @@ export default function ApplyPage() {
     } catch (err) {
       setError(err.message);
       setFieldErrors(
-        Object.fromEntries((err.details || []).map((d) => [d.field, d.message])),
+        Object.fromEntries(
+          (err.details || []).map((d) => [d.field, d.message]),
+        ),
       );
     } finally {
       setIsSaving(false);
@@ -139,7 +144,9 @@ export default function ApplyPage() {
     } catch (err) {
       setEditError(err.message);
       setEditFieldErrors(
-        Object.fromEntries((err.details || []).map((d) => [d.field, d.message])),
+        Object.fromEntries(
+          (err.details || []).map((d) => [d.field, d.message]),
+        ),
       );
     } finally {
       setIsSavingEdit(false);
@@ -157,6 +164,18 @@ export default function ApplyPage() {
       setEditError(err.message);
     } finally {
       setIsSavingEdit(false);
+    }
+  };
+
+  const handleDownloadCertificate = async (certificateId) => {
+    setDownloadError("");
+    setDownloading(true);
+    try {
+      await downloadCertificate(certificateId);
+    } catch (err) {
+      setDownloadError(err.message);
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -196,6 +215,30 @@ export default function ApplyPage() {
             </Typography>
             <StatusTimeline history={reg.statusHistory} />
           </Box>
+
+          {reg.certificate?.pdfGenerated && (
+            <Box sx={{ mt: 2 }}>
+              <Button
+                variant="contained"
+                onClick={() => handleDownloadCertificate(reg.certificate.id)}
+                disabled={downloading}
+                type="button"
+              >
+                {downloading ? "Preparing…" : "Download certificate (PDF)"}
+              </Button>
+              <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                This is a DEMO certificate. The digital signature proves the
+                file has not been altered since it was signed by the eBeba demo
+                system. It is not a qualified electronic signature under
+                Montenegrin law and has no legal effect.
+              </Typography>
+              {downloadError && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  {downloadError}
+                </Alert>
+              )}
+            </Box>
+          )}
 
           {!isEditing ? (
             <Stack spacing={1}>

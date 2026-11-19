@@ -23,6 +23,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { LineChart } from "@mui/x-charts/LineChart";
 import {
   createDiaryEntry,
   createGrowthMeasurement,
@@ -769,11 +770,43 @@ export default function CarePage() {
         {growthStatus === "error" && (
           <Alert severity="error">{growthLoadError}</Alert>
         )}
-        {growthStatus === "ready" && measurements.length === 0 && (
-          <Typography color="text.secondary">
-            No growth measurements yet.
+        {growthStatus === "ready" && measurements.length < 2 && (
+          <Typography color="text.secondary" sx={{ mb: 2 }}>
+            Add at least two measurements to see the chart.
           </Typography>
         )}
+        {growthStatus === "ready" && measurements.length >= 2 && (
+          <Box sx={{ width: "100%", height: 300, mb: 3 }}>
+            <LineChart
+              dataset={[...measurements].reverse().map((item) => ({
+                date: new Date(item.measuredAt),
+                weight: item.weightGrams,
+              }))}
+              xAxis={[
+                {
+                  dataKey: "date",
+                  scaleType: "time",
+                  valueFormatter: (value) => formatDate(value.toISOString()),
+                  label: "Date",
+                },
+              ]}
+              yAxis={[
+                {
+                  label: "Weight (g)",
+                },
+              ]}
+              series={[
+                {
+                  dataKey: "weight",
+                  label: "Weight (g)",
+                  showMark: true,
+                },
+              ]}
+              height={300}
+            />
+          </Box>
+        )}
+
         {growthStatus === "ready" && measurements.length > 0 && (
           <List disablePadding>
             {measurements.map((item) => {
