@@ -1,4 +1,4 @@
-import { api } from "./api";
+import { api, downloadFile } from "./api";
 
 // Apply to register a linked baby. Returns the new registration.
 export const createRegistration = (body) =>
@@ -48,3 +48,12 @@ export const resubmitRegistration = (registrationId) =>
 
 export const getRegistrationByBaby = (babyId) =>
   api(`/registrations/by-baby/${babyId}`);
+
+export const signCertificate = (certificateId) =>
+  api(`/certificates/${certificateId}/sign`, { method: "POST" });
+
+export const downloadCertificate = (certificateId) =>
+  downloadFile(
+    `/certificates/${certificateId}/download`,
+    `certificate-${certificateId}.pdf`,
+  );

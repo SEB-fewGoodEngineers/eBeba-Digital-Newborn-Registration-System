@@ -19,6 +19,8 @@ const certificateSchema = new mongoose.Schema(
     jmbg: { type: String, required: true }, // copy at issue time
     // crypto.randomUUID(). The public /verify/:code page shows no names or numbers.
     verificationCode: { type: String, required: true, unique: true },
+    pdfGenerated: { type: Boolean, default: false },
+    pdfFileId: { type: mongoose.Schema.Types.ObjectId },
     issuedByUserId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

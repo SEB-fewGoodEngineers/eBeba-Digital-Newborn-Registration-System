@@ -7,6 +7,7 @@ const { verifyToken, requireRole } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
+const Certificate = require("../models/Certificate");
 
 const {
   approveRegistration: approveRegistrationService,
@@ -40,8 +41,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { babyId, ...fields } = req.body;
 
-    // 1. The baby must exist. Do not leak whether it exists to a stranger:
-    //    403 covers both "not found" and "not yours" from the parent's view.
+    // 1. The baby must exist and belong to the parent.
     const baby = await Baby.findById(babyId);
     if (!baby || !isLinkedParent(req.user, baby)) {
       return res
@@ -49,8 +49,7 @@ router.post(
         .json({ err: "You can only register a baby linked to your account." });
     }
 
-    // 2. One application per baby (the unique index is the real guard,
-    //    this check gives a clean 409 instead of a Mongo error).
+    // 2. One application per baby.
     const existing = await Registration.findOne({ babyId });
     if (existing) {
       return res
@@ -58,28 +57,23 @@ router.post(
         .json({ err: "An application for this baby already exists." });
     }
 
-    // 3. Create. Server fields come AFTER the validated body, so they always win.
+    // 3. Create. Server fields come AFTER the validated body.
     const registration = await Registration.create({
       ...fields,
-      babyId, // from the checked body, not trusted beyond ownership
-      submittedByUserId: req.user._id, // never from the body
-      status: REGISTRATION_STATUS.PENDING, // server-set
-      statusHistory: (registration.statusHistory || []).map((h) => ({
-        from: h.from,
-        to: h.to,
-        at: h.at,
-        note: h.note,
-        byUser: h.byUserId
-          ? {
-              firstName: h.byUserId.firstName,
-              lastName: h.byUserId.lastName,
-              role: h.byUserId.role,
-            }
-          : null,
-      })),
+      babyId,
+      submittedByUserId: req.user._id,
+      status: REGISTRATION_STATUS.PENDING,
+      statusHistory: [
+        {
+          from: "",
+          to: REGISTRATION_STATUS.PENDING,
+          byUserId: req.user._id,
+          at: new Date(),
+        },
+      ],
     });
 
-    // 4. Audit trail – Hyppönen: log what happened, not just the error.
+    // 4. Audit.
     await audit.log({
       actor: req.user,
       action: "registration.create",
@@ -87,7 +81,7 @@ router.post(
       targetDocumentId: registration._id,
     });
 
-    // 5. Response: only application fields. No baby internals, no mother/father data.
+    // 5. Response.
     res.status(201).json({
       _id: registration._id,
       babyId: registration.babyId,
@@ -213,6 +207,10 @@ router.get(
     }
     const registration = await Registration.findOne({ babyId });
     if (!registration) return res.status(204).end();
+    const Certificate = require("../models/Certificate");
+    const cert = await Certificate.findOne({ babyId })
+      .select("_id pdfGenerated")
+      .lean();
     res.status(200).json({
       _id: registration._id,
       babyId: registration.babyId,
@@ -224,6 +222,7 @@ router.get(
       reviewerNotes: registration.reviewerNotes,
       createdAt: registration.createdAt,
       updatedAt: registration.updatedAt,
+      certificate: cert ? { id: cert._id, pdfGenerated: cert.pdfGenerated } : null,
     });
   }),
 );
@@ -376,11 +375,13 @@ router.post(
 
     res.status(200).json({
       registrationId: registration._id,
+      certificateId: certificate?._id ?? null,
       status: registration.status, // "approved" after W2
       jmbg: certificate?.jmbg ?? null,
       certificateNumber: certificate?.certificateNumber ?? null,
       verificationCode: certificate?.verificationCode ?? null,
       issuedAt: certificate?.issuedAt ?? null,
+      certificateId: certificate?._id ?? null,
     });
   }),
 );
