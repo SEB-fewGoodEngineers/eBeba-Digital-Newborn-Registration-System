@@ -1,4 +1,3 @@
-
 const express = require("express");
 const Baby = require("../models/Baby");
 const Registration = require("../models/Registration");
@@ -66,12 +65,7 @@ router.get(
       ]);
 
     const makeStatusMap = (records) =>
-      new Map(
-        records.map((record) => [
-          String(record.babyId),
-          record.status,
-        ]),
-      );
+      new Map(records.map((record) => [String(record.babyId), record.status]));
 
     const registrationStatuses = makeStatusMap(registrations);
     const cswStatuses = makeStatusMap(cswCases);
@@ -91,22 +85,18 @@ router.get(
       const { assignedPediatricianId, ...birthData } = baby;
 
       const babyId = String(baby._id);
-      const registrationStatus =
-        registrationStatuses.get(babyId) ?? null;
+      const registrationStatus = registrationStatuses.get(babyId) ?? null;
 
       return {
         ...birthData,
 
         registrationStatus,
 
-        cswStatus:
-          cswStatuses.get(babyId) ?? WAITING_FOR_MOI,
+        cswStatus: cswStatuses.get(babyId) ?? WAITING_FOR_MOI,
 
-        insuranceStatus:
-          insuranceStatuses.get(babyId) ?? WAITING_FOR_MOI,
+        insuranceStatus: insuranceStatuses.get(babyId) ?? WAITING_FOR_MOI,
 
-        pediatrician:
-          doctorsById.get(String(assignedPediatricianId)) ?? null,
+        pediatrician: doctorsById.get(String(assignedPediatricianId)) ?? null,
 
         isRegistrationApproved:
           registrationStatus === REGISTRATION_STATUS.APPROVED,

@@ -138,7 +138,10 @@ export default function CswCasesPage() {
                           </Typography>
                         }
                         secondary={
-                          <Box component="div" sx={{ mt: 0.5 }}>
+                          <Box
+                            component="span"
+                            sx={{ display: "block", mt: 0.5 }}
+                          >
                             {baby.jmbg && (
                               <Typography
                                 variant="body2"
@@ -148,10 +151,17 @@ export default function CswCasesPage() {
                                 JMBG: {baby.jmbg} <DemoBadge />
                               </Typography>
                             )}
-                            <Typography variant="body2" component="div">
+                            <Typography
+                              variant="body2"
+                              component="span"
+                              display="block"
+                            >
                               Created: {formatDate(c.createdAt)}
                             </Typography>
-                            <Box component="div" sx={{ display: "inline-block", mt: 1 }}>
+                            <Box
+                              component="span"
+                              sx={{ display: "inline-block", mt: 1 }}
+                            >
                               <StatusBadge status={c.status} />
                             </Box>
                           </Box>

@@ -19,3 +19,10 @@ ai-context/
 *.p12
 *.key
 server/certs/
+e2e/test-results/
+e2e/playwright-report/
+e2e/blob-report/
+.claude
+CLAUDE.md
+BUG-HUNT.md
+e2e

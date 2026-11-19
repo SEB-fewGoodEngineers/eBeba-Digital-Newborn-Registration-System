@@ -1,4 +1,3 @@
-
 const GENERIC_MESSAGE =
   "An update is available. Sign in to your eBeba account for details.";
 

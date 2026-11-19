@@ -53,17 +53,21 @@ router.post(
     ) {
       flags.push({
         field: "proposedLastName",
-        message: "The proposed last name does not match either parent's last name.",
+        message:
+          "The proposed last name does not match either parent's last name.",
         source: AI_FLAG_SOURCES.RULE,
       });
     }
 
     // Poziv AI servisa za bliže analize (bliske greške, npr. č/ć)
-    const aiResult = await ai.suggest(AI_SUGGESTION_KINDS.REGISTRATION_PRECHECK, {
-      proposedLastName: registration.proposedLastName,
-      motherLastName: baby.mother?.lastName,
-      fatherLastName: baby.father?.lastName,
-    });
+    const aiResult = await ai.suggest(
+      AI_SUGGESTION_KINDS.REGISTRATION_PRECHECK,
+      {
+        proposedLastName: registration.proposedLastName,
+        motherLastName: baby.mother?.lastName,
+        fatherLastName: baby.father?.lastName,
+      },
+    );
 
     if (aiResult.available && aiResult.flags) {
       aiResult.flags.forEach((f) => {
@@ -87,7 +91,7 @@ router.post(
     });
 
     res.status(201).json(suggestion);
-  })
+  }),
 );
 
 // 2. AŽURIRANJE ODLUKE O ZASTAVICI (FLAG-u)
@@ -123,7 +127,7 @@ router.patch(
     });
 
     res.status(200).json(suggestion);
-  })
+  }),
 );
 
 module.exports = router;

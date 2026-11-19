@@ -49,9 +49,30 @@ const reviewDecisionSchema = z.object({
     .max(1000, "The note is too long."),
 });
 
+// Signed payload the officer's browser signs on approval.
+// The server recomputes this from its own data and compares it byte-for-byte.
+const approvalPayloadSchema = z.object({
+  registrationId: z.string(),
+  decision: z.literal("approve"),
+  officerId: z.string(),
+  issuedAt: z.string().datetime(),
+});
+
+// Body for POST /registrations/:id/approve.
+// The officer must sign the approval payload with their key.
+const approveRegistrationSchema = z.object({
+  signature: z
+    .string({ error: "A signed approval is required." })
+    .min(1, "A signed approval is required.")
+    .max(2000, "Signature is too long."),
+  payload: approvalPayloadSchema,
+});
+
 module.exports = {
   createRegistrationSchema,
   updateRegistrationSchema,
   listRegistrationsQuerySchema,
   reviewDecisionSchema,
+  approveRegistrationSchema,
+  approvalPayloadSchema,
 };

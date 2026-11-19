@@ -1,4 +1,3 @@
-
 const Notification = require("../../models/Notification");
 const { getNotificationTemplate } = require("./templates");
 
@@ -24,10 +23,7 @@ const disconnectNotificationUser = (userId) => {
 };
 
 // Save and deliver an approved notification.
-const notify = async (
-  userId,
-  { type, title, message, link, babyId } = {},
-) => {
+const notify = async (userId, { type, title, message, link, babyId } = {}) => {
   // Reject JMBG values before processing the notification.
   const inputText = [type, title, message, link]
     .filter((value) => typeof value === "string")
@@ -79,9 +75,7 @@ const notify = async (
 
 // Send an approved notification to multiple recipients.
 const notifyMany = async (userIds, notification) => {
-  return Promise.all(
-    userIds.map((userId) => notify(userId, notification)),
-  );
+  return Promise.all(userIds.map((userId) => notify(userId, notification)));
 };
 
 // Tell a baby's linked parents about a change (Story 4.5).

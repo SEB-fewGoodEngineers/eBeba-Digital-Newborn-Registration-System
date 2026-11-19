@@ -1,4 +1,3 @@
-
 const { test } = require("node:test");
 const assert = require("node:assert");
 const mongoose = require("mongoose");
@@ -232,10 +231,7 @@ test("parent without authorized user IDs cannot access baby", () => {
     authorizedUserIds: [],
   };
 
-  assert.strictEqual(
-    canAccessBaby(user, babyWithoutParents),
-    false,
-  );
+  assert.strictEqual(canAccessBaby(user, babyWithoutParents), false);
 });
 
 test("staff without an institution cannot access a hospital baby", () => {

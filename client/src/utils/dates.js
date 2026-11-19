@@ -47,7 +47,8 @@ export const todayRange = (date = new Date()) => {
 
 // The user's local day range for ANY given date object or string
 export const dayRange = (dateInput = new Date()) => {
-  const d = typeof dateInput === "string" ? new Date(`${dateInput}T00:00`) : dateInput;
+  const d =
+    typeof dateInput === "string" ? new Date(`${dateInput}T00:00`) : dateInput;
   const start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
   return { from: start.toISOString(), to: end.toISOString() };

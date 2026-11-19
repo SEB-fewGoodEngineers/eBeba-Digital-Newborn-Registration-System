@@ -1,9 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
-const {
-  generateJmbg,
-  jmbgCheckDigit,
-} = require("../services/workflow");
+const { generateJmbg, jmbgCheckDigit } = require("../services/workflow");
 const { MUNICIPALITY_JMBG } = require("../constants/jmbgRegions");
 
 // --- jmbgCheckDigit ---------------------------------------------
@@ -78,7 +75,11 @@ test("generateJmbg: Bar (area 22) female serial in 500-799", () => {
 
 test("generateJmbg: Podgorica (area 21) male serial in 000-399", () => {
   for (let i = 0; i < 20; i++) {
-    const jmbg = generateJmbg(new Date("2026-11-11T14:00:00Z"), "Podgorica", "M");
+    const jmbg = generateJmbg(
+      new Date("2026-11-11T14:00:00Z"),
+      "Podgorica",
+      "M",
+    );
     assert.strictEqual(jmbg.slice(7, 9), "21");
     const serial = Number(jmbg.slice(9, 12));
     assert.ok(serial >= 0 && serial <= 399, `serial ${serial}`);

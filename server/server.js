@@ -1,4 +1,3 @@
-
 const dns = require("node:dns/promises");
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
@@ -29,9 +28,7 @@ for (const key of ["MONGODB_URI", "JWT_SECRET"]) {
 const port = process.env.PORT || 3000;
 const server = http.createServer(app);
 
-const allowedOrigins = (
-  process.env.CLIENT_ORIGINS || "http://localhost:5173"
-)
+const allowedOrigins = (process.env.CLIENT_ORIGINS || "http://localhost:5173")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);

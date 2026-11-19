@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { UserContext } from "./UserContext";
 import { getToken, SESSION_ENDED_EVENT } from "../services/api";
@@ -58,9 +57,5 @@ export default function UserProvider({ children }) {
     [user, isLoading, signOut],
   );
 
-  return (
-    <UserContext.Provider value={value}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }

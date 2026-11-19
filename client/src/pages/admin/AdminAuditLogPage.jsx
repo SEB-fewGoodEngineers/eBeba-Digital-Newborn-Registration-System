@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -154,10 +153,7 @@ export default function AdminAuditLogPage() {
                       {actorName}
 
                       {actor?.email && (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                        >
+                        <Typography variant="body2" color="text.secondary">
                           {actor.email}
                         </Typography>
                       )}

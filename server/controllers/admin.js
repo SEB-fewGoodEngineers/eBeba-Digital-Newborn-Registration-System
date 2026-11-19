@@ -1,4 +1,3 @@
-
 const express = require("express");
 const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
@@ -12,9 +11,7 @@ const { verifyToken, requireRole } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
-const {
-  disconnectNotificationUser,
-} = require("../services/notifications");
+const { disconnectNotificationUser } = require("../services/notifications");
 // N3: called as reminders.runReminders so tests can replace it.
 const reminders = require("../services/notifications/reminders");
 
@@ -61,14 +58,8 @@ router.post(
   "/users",
   validate(createStaffSchema),
   asyncHandler(async (req, res) => {
-    const {
-      firstName,
-      lastName,
-      email,
-      password,
-      role,
-      institutionId,
-    } = req.body;
+    const { firstName, lastName, email, password, role, institutionId } =
+      req.body;
 
     const institution = await Institution.findById(institutionId);
 

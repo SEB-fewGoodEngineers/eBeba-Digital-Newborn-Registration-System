@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const express = require("express");
 const mongoose = require("mongoose");
 
@@ -8,7 +9,12 @@ const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
 const Certificate = require("../models/Certificate");
-
+const {
+  verifyApprovalSignature,
+  canonicalApprovalPayload,
+} = require("../services/singing");
+const { approveRegistrationSchema } = require("../validators/registrations");
+const User = require("../models/User");
 const {
   approveRegistration: approveRegistrationService,
   returnRegistration: returnRegistrationService,
@@ -222,7 +228,9 @@ router.get(
       reviewerNotes: registration.reviewerNotes,
       createdAt: registration.createdAt,
       updatedAt: registration.updatedAt,
-      certificate: cert ? { id: cert._id, pdfGenerated: cert.pdfGenerated } : null,
+      certificate: cert
+        ? { id: cert._id, pdfGenerated: cert.pdfGenerated }
+        : null,
     });
   }),
 );
@@ -335,20 +343,58 @@ router.post(
   "/:registrationId/approve",
   verifyToken,
   requireRole(ROLES.MOI_STAFF),
+  validate(approveRegistrationSchema),
   asyncHandler(async (req, res) => {
     const { registrationId } = req.params;
     if (!mongoose.isValidObjectId(registrationId)) {
       return res.status(404).json({ err: "Application not found." });
     }
 
-    // Load the full document (not lean) — transition() mutates it and saves.
+    // 1. The officer must have registered a signing key.
+    const officer = await User.findById(req.user._id).select(
+      "signingPublicKey role",
+    );
+    if (!officer || !officer.signingPublicKey) {
+      return res.status(409).json({
+        err: "Register your signing key before approving.",
+      });
+    }
+
+    // 2. The payload must refer to THIS registration and THIS officer.
+    //    Do not trust the client's claim about who or what it signed.
+    const { signature, payload } = req.body;
+    if (
+      payload.registrationId !== registrationId ||
+      payload.officerId !== String(req.user._id)
+    ) {
+      return res
+        .status(403)
+        .json({ err: "Signature does not match this request." });
+    }
+
+    // 3. The payload must be recent: 5-minute window. Prevents replay of an
+    //    old signature against a new approval.
+    const issuedAt = new Date(payload.issuedAt).getTime();
+    const ageMs = Date.now() - issuedAt;
+    if (!Number.isFinite(issuedAt) || ageMs < -30_000 || ageMs > 5 * 60_000) {
+      return res.status(403).json({ err: "Signed approval has expired." });
+    }
+
+    // 4. Verify the signature over the canonical payload.
+    const ok = verifyApprovalSignature(
+      payload,
+      signature,
+      officer.signingPublicKey,
+    );
+    if (!ok) {
+      return res.status(403).json({ err: "Invalid signature." });
+    }
+
+    // 5. Load the registration and approve.
     const registration = await Registration.findById(registrationId);
     if (!registration) {
       return res.status(404).json({ err: "Application not found." });
     }
-
-    // Short-circuit the common "already approved" case, with a clear message.
-    // transition() would also refuse it, but a specific message here is friendlier.
     if (registration.status === REGISTRATION_STATUS.APPROVED) {
       return res
         .status(409)
@@ -356,14 +402,30 @@ router.post(
     }
 
     try {
-      // Approve. transition() inside throws 409 for any not-allowed change.
       await approveRegistrationService(registration, req.user);
     } catch (err) {
-      if (err.status === 409) {
-        return res.status(409).json({ err: err.message });
-      }
-      throw err; // asyncHandler -> errorHandler -> 500
+      if (err.status === 409) return res.status(409).json({ err: err.message });
+      throw err;
     }
+
+    // 6. Store the proof in the audit log. No PII in the log; the signature
+    //    is proof-of-intent, not the officer's identity number.
+    await audit.log({
+      actor: req.user,
+      action: "registration.approve",
+      targetCollection: "registrations",
+      targetDocumentId: registration._id,
+      changes: {
+        after: {
+          status: REGISTRATION_STATUS.APPROVED,
+          signature,
+          payloadHash: crypto
+            .createHash("sha256")
+            .update(canonicalApprovalPayload(payload))
+            .digest("hex"),
+        },
+      },
+    });
 
     // Fetch the certificate that approveRegistration created (upserted).
     // This is the read side; the write side owns the fields.

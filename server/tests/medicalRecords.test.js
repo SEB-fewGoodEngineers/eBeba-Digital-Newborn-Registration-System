@@ -1,4 +1,3 @@
-
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -22,9 +21,7 @@ const validRecord = () => ({
 });
 
 test("accepts a valid medical record", () => {
-  const result = createMedicalRecordSchema.safeParse(
-    validRecord(),
-  );
+  const result = createMedicalRecordSchema.safeParse(validRecord());
 
   assert.equal(result.success, true);
   assert.ok(result.data.examinationDate instanceof Date);
@@ -38,9 +35,7 @@ test("rejects a medical record without a title", () => {
 
   assert.equal(result.success, false);
   assert.ok(
-    result.error.issues.some(
-      (issue) => issue.path.join(".") === "title",
-    ),
+    result.error.issues.some((issue) => issue.path.join(".") === "title"),
   );
 });
 

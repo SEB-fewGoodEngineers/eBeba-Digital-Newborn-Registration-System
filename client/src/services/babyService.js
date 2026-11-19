@@ -1,4 +1,3 @@
-
 import { api } from "./api";
 
 // STORY 1.1 - HOSPITAL BIRTH RECORDS

@@ -1,4 +1,3 @@
-
 const { test, mock } = require("node:test");
 const assert = require("node:assert/strict");
 const mongoose = require("mongoose");
@@ -10,11 +9,7 @@ test("audit.log saves an audit record", async () => {
   const actorId = new mongoose.Types.ObjectId();
   const documentId = new mongoose.Types.ObjectId();
 
-  const createMock = mock.method(
-    AuditLog,
-    "create",
-    async (data) => data,
-  );
+  const createMock = mock.method(AuditLog, "create", async (data) => data);
 
   try {
     await audit.log({
@@ -52,11 +47,7 @@ test("audit.log saves an audit record", async () => {
 });
 
 test("audit.log works without optional changes", async () => {
-  const createMock = mock.method(
-    AuditLog,
-    "create",
-    async (data) => data,
-  );
+  const createMock = mock.method(AuditLog, "create", async (data) => data);
 
   try {
     await audit.log({
@@ -81,13 +72,9 @@ test("audit.log works without optional changes", async () => {
 });
 
 test("audit.log does not throw when saving fails", async () => {
-  const createMock = mock.method(
-    AuditLog,
-    "create",
-    async () => {
-      throw new Error("Database error");
-    },
-  );
+  const createMock = mock.method(AuditLog, "create", async () => {
+    throw new Error("Database error");
+  });
 
   const errorMock = mock.method(console, "error", () => {});
 
