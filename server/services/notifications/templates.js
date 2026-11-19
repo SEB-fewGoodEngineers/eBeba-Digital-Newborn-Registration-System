@@ -4,6 +4,10 @@ const GENERIC_MESSAGE =
 
 // Approved notification texts contain no personal or medical details.
 const NOTIFICATION_TEMPLATES = Object.freeze({
+  "birth_record.created": {
+    title: "Birth record created",
+    message: "A hospital created a birth record. Use the record number below to link your baby to your eBeba account.",
+  },
   // Story 4.5: the pediatrician added a clinical entry. No medical details.
   "medical_record.added_by_pediatrician": {
     title: "Health record update",

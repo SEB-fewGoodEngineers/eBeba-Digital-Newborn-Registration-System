@@ -10,7 +10,7 @@ const router = express.Router();
 
 // The fields the bell and the Demo inbox need. Never the recipient id.
 const NOTIFICATION_FIELDS =
-  "type title message link babyId channels readAt createdAt";
+  "type title message link babyId birthRecordNumber channels readAt createdAt";
 
 // Enough for the bell and the Demo inbox; keeps the response small.
 const MAX_NOTIFICATIONS = 100;

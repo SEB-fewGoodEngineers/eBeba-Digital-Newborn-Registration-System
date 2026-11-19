@@ -272,6 +272,52 @@ test("medical details are excluded from saved and live notifications", async () 
   }
 });
 
+test("birth record notification stores only the number with an approved link", async () => {
+  let savedData;
+  Notification.create = async (data) => {
+    savedData = data;
+    return { _id: NOTIFICATION_ID, ...data };
+  };
+
+  await notify(USER_ID, {
+    type: "birth_record.created",
+    title: "Untrusted title",
+    message: "Untrusted text",
+    link: "/babies/link",
+    babyId: BABY_ID,
+    birthRecordNumber: "BR-HOSP-DEMO-123",
+  });
+  assert.equal(savedData.title, "Birth record created");
+  assert.equal(savedData.birthRecordNumber, "BR-HOSP-DEMO-123");
+  assert.equal(savedData.link, "/babies/link");
+  assert.doesNotMatch(savedData.message, /Untrusted/);
+});
+
+test("rejects a record number on other notification types", async () => {
+  await assert.rejects(
+    notify(USER_ID, { ...sampleNotification, birthRecordNumber: "BR-OTHER" }),
+    /Invalid birth record number/,
+  );
+});
+
+test("rejects a birth notification without a record number", async () => {
+  await assert.rejects(
+    notify(USER_ID, { type: "birth_record.created", link: "/babies/link" }),
+    /Birth record number is required/,
+  );
+});
+
+test("rejects unapproved links even for birth notifications", async () => {
+  await assert.rejects(
+    notify(USER_ID, {
+      type: "birth_record.created",
+      birthRecordNumber: "BR-HOSP-DEMO-123",
+      link: "/admin/users",
+    }),
+    /Notification link is not allowed/,
+  );
+});
+
 test("rejects unknown notification types", async () => {
   let saveCalled = false;
 

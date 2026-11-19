@@ -10,6 +10,7 @@ const notificationSchema = new mongoose.Schema(
       required: true,
     },
     babyId: { type: mongoose.Schema.Types.ObjectId, ref: "Baby" },
+    birthRecordNumber: { type: String, trim: true, maxlength: 100 },
     type: { type: String, required: true, trim: true }, // e.g. "registration.approved"
     title: { type: String, required: true, trim: true, maxlength: 100 },
     message: { type: String, required: true, trim: true, maxlength: 500 },

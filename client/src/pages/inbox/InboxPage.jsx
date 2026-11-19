@@ -53,6 +53,12 @@ function DemoEmail({ notification, recipient }) {
         <strong>Subject:</strong> {notification.title}
       </Typography>
       <Typography sx={{ mb: 1 }}>{notification.message}</Typography>
+      {notification.type === "birth_record.created" &&
+        notification.birthRecordNumber && (
+          <Typography sx={{ mb: 1 }} fontWeight="bold">
+            Birth Record Number: {notification.birthRecordNumber}
+          </Typography>
+        )}
       {isInternalLink(notification.link) && (
         <Button
           variant="outlined"
@@ -96,6 +102,9 @@ function DemoSms({ notification, recipient }) {
       >
         <Typography variant="body2">
           eBeba: {notification.title}. {notification.message}
+          {notification.type === "birth_record.created" &&
+            notification.birthRecordNumber &&
+            ` Record Number: ${notification.birthRecordNumber}`}
         </Typography>
       </Box>
     </Box>

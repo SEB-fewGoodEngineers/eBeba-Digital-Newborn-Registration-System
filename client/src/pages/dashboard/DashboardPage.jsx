@@ -147,7 +147,9 @@ export default function DashboardPage() {
                     Born: {formatDateTime(baby.birthDateTime)}
                   </Typography>
 
-                  <Typography>Gender: {baby.gender}</Typography>
+                  <Typography>
+                    Gender: {baby.gender}
+                  </Typography>
 
                   <Typography>
                     Place of birth: {baby.placeOfBirth}
@@ -166,8 +168,13 @@ export default function DashboardPage() {
                   </Typography>
 
                   {baby.jmbg && (
-                    <Stack direction="row" alignItems="center">
-                      <Typography>JMBG: {baby.jmbg}</Typography>
+                    <Stack
+                      direction="row"
+                      sx={{ alignItems: "center" }}
+                    >
+                      <Typography>
+                        JMBG: {baby.jmbg}
+                      </Typography>
                       <DemoBadge />
                     </Stack>
                   )}
@@ -180,14 +187,18 @@ export default function DashboardPage() {
                     <Stack
                       direction="row"
                       spacing={2}
-                      alignItems="center"
+                      sx={{ alignItems: "center" }}
                     >
                       <Typography>MoI:</Typography>
 
                       {baby.registrationStatus ? (
-                        <StatusBadge status={baby.registrationStatus} />
+                        <StatusBadge
+                          status={baby.registrationStatus}
+                        />
                       ) : (
-                        <Typography>Not submitted</Typography>
+                        <Typography>
+                          Not submitted
+                        </Typography>
                       )}
                     </Stack>
 
@@ -202,7 +213,7 @@ export default function DashboardPage() {
                           <Typography variant="body2">
                             The MoI officer has returned your
                             application for correction. Please review
-                            the officer's comments, correct your
+                            the officer&apos;s comments, correct your
                             application, and submit it again.
                           </Typography>
 
@@ -213,7 +224,7 @@ export default function DashboardPage() {
                             color="warning"
                             sx={{ alignSelf: "flex-start" }}
                           >
-                            View Feedback & Correct Application
+                            View Feedback &amp; Correct Application
                           </Button>
                         </Stack>
                       </Alert>
@@ -222,7 +233,7 @@ export default function DashboardPage() {
                     <Stack
                       direction="row"
                       spacing={2}
-                      alignItems="center"
+                      sx={{ alignItems: "center" }}
                     >
                       <Typography>CSW:</Typography>
                       <StatusBadge status={baby.cswStatus} />
@@ -231,10 +242,12 @@ export default function DashboardPage() {
                     <Stack
                       direction="row"
                       spacing={2}
-                      alignItems="center"
+                      sx={{ alignItems: "center" }}
                     >
                       <Typography>FZO:</Typography>
-                      <StatusBadge status={baby.insuranceStatus} />
+                      <StatusBadge
+                        status={baby.insuranceStatus}
+                      />
                     </Stack>
                   </Stack>
 
@@ -247,7 +260,10 @@ export default function DashboardPage() {
 
                   {/* Download approved certificate */}
                   {baby.isRegistrationApproved && (
-                    <Stack spacing={1} alignItems="flex-start">
+                    <Stack
+                      spacing={1}
+                      sx={{ alignItems: "flex-start" }}
+                    >
                       <Button
                         variant="contained"
                         color="success"
@@ -270,7 +286,10 @@ export default function DashboardPage() {
                       </Button>
 
                       {downloadError[baby._id] && (
-                        <Alert severity="warning" sx={{ width: "100%" }}>
+                        <Alert
+                          severity="warning"
+                          sx={{ width: "100%" }}
+                        >
                           {downloadError[baby._id]}
                         </Alert>
                       )}
