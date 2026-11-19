@@ -20,6 +20,8 @@ import QueuePage from "./pages/moi/QueuePage";
 import MedicalRecordsPage from "./pages/health/MedicalRecordsPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import ReviewPage from "./pages/moi/ReviewPage";
+import InsuranceRecordsPage from "./pages/fzo/InsuranceRecordsPage";
+import VerifyCertificatePage from "./pages/verify/VerifyCertificatePage";
 
 // STORY 4.3 - VACCINATIONS
 import VaccinationsPage from "./pages/health/VaccinationsPage";
@@ -202,6 +204,25 @@ export default function App() {
               </RequireRole>
             }
           />
+
+          {/* EPIC 3 - CSW & FZO & VERIFICATION */}
+          <Route
+            path="/csw-cases"
+            element={
+              <RequireRole roles={[ROLES.CSW_STAFF]}>
+                <CswCasesPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/insurance-records"
+            element={
+              <RequireRole roles={[ROLES.HEALTH_INSURANCE_STAFF]}>
+                <InsuranceRecordsPage />
+              </RequireRole>
+            }
+          />
+          <Route path="/verify/:code" element={<VerifyCertificatePage />} />
 
           {/* A3 - ADMIN: CREATE STAFF USERS */}
           <Route

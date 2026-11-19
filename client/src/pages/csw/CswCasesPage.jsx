@@ -19,6 +19,7 @@ import {
   startCswCase,
   completeCswCase,
   rejectCswCase,
+  downloadSocialCardPdf,
 } from "../../services/cswService";
 import StatusBadge from "../../components/StatusBadge/StatusBadge";
 import DemoBadge from "../../components/DemoBadge/DemoBadge";
@@ -27,7 +28,7 @@ import { formatDate } from "../../utils/dates";
 export default function CswCasesPage() {
   const [cases, setCases] = useState([]);
   const [selectedCase, setSelectedCase] = useState(null);
-  const [status, setStatus] = useState("loading"); // "loading" | "error" | "ready"
+  const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
   const [rejectNotes, setRejectNotes] = useState("");
@@ -60,7 +61,6 @@ export default function CswCasesPage() {
   };
 
   const syncUpdatedCase = (updated) => {
-    // Čuvamo postojeći babyId objekat ako ga server nije ponovo populirao
     const merged = {
       ...updated,
       babyId:
@@ -118,7 +118,6 @@ export default function CswCasesPage() {
         CSW Cases Queue
       </Typography>
       <Stack direction={{ xs: "column", md: "row" }} spacing={4}>
-        {/* Lijeva strana: Lista predmeta */}
         <Box sx={{ flex: 1 }}>
           <Card variant="outlined">
             <List disablePadding>
@@ -133,7 +132,7 @@ export default function CswCasesPage() {
                     >
                       <ListItemText
                         primary={
-                          <Typography variant="subtitle1">
+                          <Typography variant="subtitle1" component="div">
                             {baby.firstName || "Proposed Name"}{" "}
                             {baby.lastName || ""}
                           </Typography>
@@ -146,7 +145,7 @@ export default function CswCasesPage() {
                             {baby.jmbg && (
                               <Typography
                                 variant="body2"
-                                component="span"
+                                component="div"
                                 sx={{ display: "flex", alignItems: "center" }}
                               >
                                 JMBG: {baby.jmbg} <DemoBadge />
@@ -167,6 +166,7 @@ export default function CswCasesPage() {
                             </Box>
                           </Box>
                         }
+                        component="div"
                       />
                     </ListItemButton>
                   </Box>
@@ -176,7 +176,6 @@ export default function CswCasesPage() {
           </Card>
         </Box>
 
-        {/* Desna strana: Detalji predmeta i akcije */}
         <Box sx={{ flex: 1 }}>
           {selectedCase ? (
             <Card variant="outlined">
@@ -189,19 +188,37 @@ export default function CswCasesPage() {
                 </Box>
 
                 {selectedCase.socialCardNumber && (
-                  <Typography
-                    variant="body2"
-                    sx={{ display: "flex", alignItems: "center", mt: 1 }}
-                  >
-                    Social Card Number: {selectedCase.socialCardNumber}
-                    <DemoBadge />
-                  </Typography>
+                  <Box sx={{ mt: 1 }}>
+                    <Typography
+                      variant="body2"
+                      component="div"
+                      sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                    >
+                      Social Card Number: {selectedCase.socialCardNumber}
+                      <DemoBadge />
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() =>
+                        handleAction(async () => {
+                          const babyId =
+                            selectedCase.babyId?._id || selectedCase.babyId;
+                          await downloadSocialCardPdf(babyId);
+                          return selectedCase;
+                        })
+                      }
+                    >
+                      Download Social Card (PDF)
+                    </Button>
+                  </Box>
                 )}
 
                 {selectedCase.notes && (
                   <Typography
                     variant="body2"
                     color="text.secondary"
+                    component="div"
                     sx={{ mt: 1 }}
                   >
                     Notes: {selectedCase.notes}
@@ -219,6 +236,7 @@ export default function CswCasesPage() {
                 </Typography>
                 <Typography
                   variant="body2"
+                  component="div"
                   sx={{ display: "flex", alignItems: "center", my: 0.5 }}
                 >
                   JMBG: {selectedCase.babyId?.jmbg || "Pending"}
@@ -251,7 +269,6 @@ export default function CswCasesPage() {
                   </Alert>
                 )}
 
-                {/* Sekcija sa dugmadima za obradu predmeta (Start, Complete, Reject) */}
                 <Box sx={{ mt: 3, display: "flex", gap: 2, flexWrap: "wrap" }}>
                   {selectedCase.status === "received" && (
                     <Button

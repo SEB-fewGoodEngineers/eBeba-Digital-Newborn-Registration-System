@@ -52,3 +52,21 @@ test("removes unknown fields when assigning a pediatrician", () => {
     pediatricianId: validId,
   });
 });
+test("rejects an invalid insuredParentId when issuing insurance", () => {
+  const result = issueInsuranceSchema.safeParse({
+    insuredParentId: "invalid-id-123",
+  });
+  assert.strictEqual(result.success, false);
+});
+
+test("removes status and card numbers sent with the issue request", () => {
+  const result = issueInsuranceSchema.safeParse({
+    insuredParentId: validId,
+    status: "card_issued",
+    policyNumber: "POL-DEMO-FAKE",
+    healthCardNumber: "HC-DEMO-FAKE",
+    insuredPersonCardNumber: "IPC-DEMO-FAKE",
+  });
+  assert.strictEqual(result.success, true);
+  assert.deepStrictEqual(result.data, { insuredParentId: validId });
+});
