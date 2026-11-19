@@ -36,8 +36,7 @@ export default function PrecheckPanel({
     }
   };
 
-  const showUnavailable =
-    suggestion && suggestion.aiAvailable === false;
+  const showUnavailable = suggestion && suggestion.aiAvailable === false;
 
   return (
     <Card sx={{ mt: 2 }}>
@@ -122,9 +121,7 @@ export default function PrecheckPanel({
                         size="small"
                         variant="contained"
                         color="success"
-                        onClick={() =>
-                          handleDecide(flag._id, "accepted")
-                        }
+                        onClick={() => handleDecide(flag._id, "accepted")}
                         disabled={isBusy}
                         type="button"
                       >
@@ -133,9 +130,7 @@ export default function PrecheckPanel({
                       <Button
                         size="small"
                         variant="outlined"
-                        onClick={() =>
-                          handleDecide(flag._id, "dismissed")
-                        }
+                        onClick={() => handleDecide(flag._id, "dismissed")}
                         disabled={isBusy}
                         type="button"
                       >

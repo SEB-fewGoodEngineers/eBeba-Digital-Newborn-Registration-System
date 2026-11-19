@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link as RouterLink, useParams } from "react-router";
 import {
@@ -22,11 +21,7 @@ import {
   getMedicalRecords,
   updateMedicalRecord,
 } from "../../services/medicalRecordService";
-import {
-  formatDate,
-  toDateInput,
-  toIso,
-} from "../../utils/dates";
+import { formatDate, toDateInput, toIso } from "../../utils/dates";
 
 const RECORD_TYPES = [
   { value: "examination", label: "Examination" },
@@ -163,10 +158,7 @@ export default function MedicalRecordsPage() {
 
       setFieldErrors(
         Object.fromEntries(
-          (err.details || []).map((detail) => [
-            detail.field,
-            detail.message,
-          ]),
+          (err.details || []).map((detail) => [detail.field, detail.message]),
         ),
       );
     } finally {
@@ -175,9 +167,7 @@ export default function MedicalRecordsPage() {
   };
 
   const formInvalid =
-    !form.title.trim() ||
-    !form.description.trim() ||
-    !form.examinationDate;
+    !form.title.trim() || !form.description.trim() || !form.examinationDate;
 
   return (
     <Box sx={{ maxWidth: 960, mx: "auto", p: 3 }}>
@@ -198,9 +188,7 @@ export default function MedicalRecordsPage() {
         Vaccinations
       </Button>
 
-      {isLoading && (
-        <CircularProgress aria-label="Loading medical records" />
-      )}
+      {isLoading && <CircularProgress aria-label="Loading medical records" />}
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -213,22 +201,12 @@ export default function MedicalRecordsPage() {
           <Card sx={{ mb: 4 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                {editingId
-                  ? "Edit medical record"
-                  : "Add medical record"}
+                {editingId ? "Edit medical record" : "Add medical record"}
               </Typography>
 
-              <Box
-                component="form"
-                onSubmit={handleSubmit}
-                noValidate
-              >
+              <Box component="form" onSubmit={handleSubmit} noValidate>
                 <Stack spacing={2}>
-                  {formError && (
-                    <Alert severity="error">
-                      {formError}
-                    </Alert>
-                  )}
+                  {formError && <Alert severity="error">{formError}</Alert>}
 
                   <TextField
                     select
@@ -242,10 +220,7 @@ export default function MedicalRecordsPage() {
                     helperText={fieldErrors.recordType}
                   >
                     {RECORD_TYPES.map((type) => (
-                      <MenuItem
-                        key={type.value}
-                        value={type.value}
-                      >
+                      <MenuItem key={type.value} value={type.value}>
                         {type.label}
                       </MenuItem>
                     ))}
@@ -339,18 +314,12 @@ export default function MedicalRecordsPage() {
             </CardContent>
           </Card>
 
-          <Typography
-            variant="h5"
-            component="h2"
-            sx={{ mb: 2 }}
-          >
+          <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
             Medical history
           </Typography>
 
           {records.length === 0 ? (
-            <Alert severity="info">
-              No medical records yet.
-            </Alert>
+            <Alert severity="info">No medical records yet.</Alert>
           ) : (
             <Stack spacing={2}>
               {records.map((record) => (
@@ -364,9 +333,7 @@ export default function MedicalRecordsPage() {
                       sx={{ mb: 2 }}
                     >
                       <Box>
-                        <Typography variant="h6">
-                          {record.title}
-                        </Typography>
+                        <Typography variant="h6">{record.title}</Typography>
 
                         <Typography color="text.secondary">
                           {formatDate(record.examinationDate)}
@@ -377,16 +344,13 @@ export default function MedicalRecordsPage() {
                         size="small"
                         label={
                           RECORD_TYPES.find(
-                            (type) =>
-                              type.value === record.recordType,
+                            (type) => type.value === record.recordType,
                           )?.label || record.recordType
                         }
                       />
                     </Stack>
 
-                    <Typography sx={{ mb: 2 }}>
-                      {record.description}
-                    </Typography>
+                    <Typography sx={{ mb: 2 }}>{record.description}</Typography>
 
                     {record.doctorRecommendations && (
                       <Typography sx={{ mb: 2 }}>
@@ -395,10 +359,7 @@ export default function MedicalRecordsPage() {
                       </Typography>
                     )}
 
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                    >
+                    <Typography variant="body2" color="text.secondary">
                       {record.entrySource === ENTRY_SOURCES.PARENT
                         ? "Entered by parent"
                         : record.entrySource === ENTRY_SOURCES.PEDIATRICIAN

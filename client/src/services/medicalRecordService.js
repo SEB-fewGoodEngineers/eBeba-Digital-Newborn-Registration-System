@@ -1,4 +1,3 @@
-
 import { api } from "./api";
 
 // Get medical records for one baby.

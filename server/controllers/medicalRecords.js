@@ -96,11 +96,9 @@ router.patch(
         record.entrySource === ENTRY_SOURCES.PEDIATRICIAN
           ? "a pediatrician"
           : "a parent";
-      return res
-        .status(403)
-        .json({
-          err: `This record was entered by ${who}. You cannot change it.`,
-        });
+      return res.status(403).json({
+        err: `This record was entered by ${who}. You cannot change it.`,
+      });
     }
 
     const before = record.toObject();

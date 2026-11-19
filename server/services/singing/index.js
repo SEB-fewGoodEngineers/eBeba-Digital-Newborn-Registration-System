@@ -5,7 +5,12 @@ const crypto = require("crypto");
  * on the browser and the server. Do not change ordering or spacing without
  * changing both sides in the same PR.
  */
-const canonicalApprovalPayload = ({ registrationId, decision, officerId, issuedAt }) =>
+const canonicalApprovalPayload = ({
+  registrationId,
+  decision,
+  officerId,
+  issuedAt,
+}) =>
   JSON.stringify({
     registrationId,
     decision,

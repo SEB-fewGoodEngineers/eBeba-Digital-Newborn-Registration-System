@@ -8,9 +8,12 @@ const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
 const Certificate = require("../models/Certificate");
-const { verifyApprovalSignature, canonicalApprovalPayload } = require("../services/singing");
+const {
+  verifyApprovalSignature,
+  canonicalApprovalPayload,
+} = require("../services/singing");
 const { approveRegistrationSchema } = require("../validators/registrations");
-const User = require('../models/User');
+const User = require("../models/User");
 const {
   approveRegistration: approveRegistrationService,
   returnRegistration: returnRegistrationService,
@@ -224,7 +227,9 @@ router.get(
       reviewerNotes: registration.reviewerNotes,
       createdAt: registration.createdAt,
       updatedAt: registration.updatedAt,
-      certificate: cert ? { id: cert._id, pdfGenerated: cert.pdfGenerated } : null,
+      certificate: cert
+        ? { id: cert._id, pdfGenerated: cert.pdfGenerated }
+        : null,
     });
   }),
 );
@@ -361,7 +366,9 @@ router.post(
       payload.registrationId !== registrationId ||
       payload.officerId !== String(req.user._id)
     ) {
-      return res.status(403).json({ err: "Signature does not match this request." });
+      return res
+        .status(403)
+        .json({ err: "Signature does not match this request." });
     }
 
     // 3. The payload must be recent: 5-minute window. Prevents replay of an

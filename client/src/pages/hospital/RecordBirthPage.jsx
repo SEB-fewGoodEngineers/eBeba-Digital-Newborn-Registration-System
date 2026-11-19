@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
@@ -13,11 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 
-import {
-  createBaby,
-  getBaby,
-  updateBaby,
-} from "../../services/babyService";
+import { createBaby, getBaby, updateBaby } from "../../services/babyService";
 import { toIso } from "../../utils/dates";
 
 const emptyParent = {
@@ -175,10 +170,7 @@ export default function RecordBirthPage() {
 
       setFieldErrors(
         Object.fromEntries(
-          (err.details || []).map((item) => [
-            item.field,
-            item.message,
-          ]),
+          (err.details || []).map((item) => [item.field, item.message]),
         ),
       );
     } finally {
@@ -271,10 +263,7 @@ export default function RecordBirthPage() {
                   Give this number to the parent so they can link their account.
                 </Typography>
 
-                <Button
-                  variant="contained"
-                  onClick={() => setSavedBaby(null)}
-                >
+                <Button variant="contained" onClick={() => setSavedBaby(null)}>
                   Record another birth
                 </Button>
               </>
@@ -291,15 +280,9 @@ export default function RecordBirthPage() {
         ) : (
           <Box component="form" onSubmit={handleSubmit} noValidate>
             <Stack spacing={3}>
-              {error && (
-                <Alert severity="error">
-                  {error}
-                </Alert>
-              )}
+              {error && <Alert severity="error">{error}</Alert>}
 
-              <Typography variant="h6">
-                Birth information
-              </Typography>
+              <Typography variant="h6">Birth information</Typography>
 
               <TextField
                 select
@@ -392,34 +375,21 @@ export default function RecordBirthPage() {
                 required
                 fullWidth
               >
-                <MenuItem value="two_parents">
-                  Two parents
-                </MenuItem>
+                <MenuItem value="two_parents">Two parents</MenuItem>
 
-                <MenuItem value="single_parent">
-                  Single parent
-                </MenuItem>
+                <MenuItem value="single_parent">Single parent</MenuItem>
 
-                <MenuItem value="unknown_father">
-                  Unknown father
-                </MenuItem>
+                <MenuItem value="unknown_father">Unknown father</MenuItem>
 
-                <MenuItem value="legal_guardian">
-                  Legal guardian
-                </MenuItem>
+                <MenuItem value="legal_guardian">Legal guardian</MenuItem>
               </TextField>
 
               {parentFields("mother", "Mother's information")}
 
-              {showFather &&
-                parentFields("father", "Father's information")}
+              {showFather && parentFields("father", "Father's information")}
 
               <Stack direction="row" spacing={2}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={isSaving}
-                >
+                <Button type="submit" variant="contained" disabled={isSaving}>
                   {isSaving
                     ? "Saving..."
                     : isEditing
@@ -427,11 +397,7 @@ export default function RecordBirthPage() {
                       : "Save birth record"}
                 </Button>
 
-                <Button
-                  type="button"
-                  component={Link}
-                  to="/hospital/babies"
-                >
+                <Button type="button" component={Link} to="/hospital/babies">
                   Cancel
                 </Button>
               </Stack>

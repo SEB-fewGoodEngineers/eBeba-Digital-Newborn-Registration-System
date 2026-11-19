@@ -1,4 +1,3 @@
-
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const User = require("../models/User");
@@ -86,10 +85,7 @@ const canAccessBaby = (user, baby, records = {}) => {
       return true;
 
     case ROLES.CSW_STAFF:
-      return idsMatch(
-        records.cswCase?.cswInstitutionId,
-        user.institutionId,
-      );
+      return idsMatch(records.cswCase?.cswInstitutionId, user.institutionId);
 
     case ROLES.HEALTH_INSURANCE_STAFF:
       return idsMatch(

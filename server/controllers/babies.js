@@ -1,4 +1,3 @@
-
 const express = require("express");
 const Baby = require("../models/Baby");
 const Registration = require("../models/Registration");
@@ -11,10 +10,7 @@ const {
 } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
-const {
-  createBabySchema,
-  linkBabySchema,
-} = require("../validators/babies");
+const { createBabySchema, linkBabySchema } = require("../validators/babies");
 const { generateNumber } = require("../services/workflow");
 const audit = require("../services/audit");
 const { ROLES, INSTITUTION_TYPES } = require("../constants");
@@ -81,10 +77,7 @@ router.get(
 
       const regex = new RegExp(escapedSearch, "i");
 
-      filter.$or = [
-        { "mother.lastName": regex },
-        { birthRecordNumber: regex },
-      ];
+      filter.$or = [{ "mother.lastName": regex }, { birthRecordNumber: regex }];
     }
 
     const babies = await Baby.find(filter).sort({
@@ -122,8 +115,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { birthRecordNumber } = req.body;
 
-    const linkError =
-      "We could not find a birth record for your account.";
+    const linkError = "We could not find a birth record for your account.";
 
     const baby = await Baby.findOne({ birthRecordNumber });
 

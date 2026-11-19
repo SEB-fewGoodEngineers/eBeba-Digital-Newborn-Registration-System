@@ -178,7 +178,9 @@ export default function CarePage() {
   const [milestones, setMilestones] = useState([]);
   const [milestoneStatus, setMilestoneStatus] = useState("loading");
   const [milestoneLoadError, setMilestoneLoadError] = useState("");
-  const [milestoneForm, setMilestoneForm] = useState(createInitialMilestoneForm);
+  const [milestoneForm, setMilestoneForm] = useState(
+    createInitialMilestoneForm,
+  );
   const [milestoneFormError, setMilestoneFormError] = useState("");
   const [milestoneFieldErrors, setMilestoneFieldErrors] = useState({});
   const [isSavingMilestone, setIsSavingMilestone] = useState(false);
@@ -906,9 +908,7 @@ export default function CarePage() {
               value={milestoneForm.notes}
               onChange={handleMilestoneChange}
               error={Boolean(milestoneFieldErrors.notes)}
-              helperText={
-                milestoneFormError || "Optional (max 500 characters)"
-              }
+              helperText={milestoneFormError || "Optional (max 500 characters)"}
               slotProps={{ htmlInput: { maxLength: 500 } }}
               multiline
               minRows={2}

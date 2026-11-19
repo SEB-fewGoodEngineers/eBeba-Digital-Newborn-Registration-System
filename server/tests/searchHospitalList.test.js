@@ -1,4 +1,3 @@
-
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const http = require("node:http");
@@ -67,15 +66,11 @@ test("Story 1.5 - Search the hospital list", async (t) => {
 
           return filter.$or.some((condition) => {
             if (condition["mother.lastName"]) {
-              return condition["mother.lastName"].test(
-                baby.mother.lastName,
-              );
+              return condition["mother.lastName"].test(baby.mother.lastName);
             }
 
             if (condition.birthRecordNumber) {
-              return condition.birthRecordNumber.test(
-                baby.birthRecordNumber,
-              );
+              return condition.birthRecordNumber.test(baby.birthRecordNumber);
             }
 
             return false;

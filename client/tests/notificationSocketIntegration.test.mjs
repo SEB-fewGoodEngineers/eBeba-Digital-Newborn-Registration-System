@@ -1,4 +1,3 @@
-
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
@@ -16,15 +15,13 @@ const { Server } = serverRequire("socket.io");
 const User = serverRequire("./models/User");
 const Notification = serverRequire("./models/Notification");
 
-const {
-  notify,
-  setSocketServer,
-  disconnectNotificationUser,
-} = serverRequire("./services/notifications");
+const { notify, setSocketServer, disconnectNotificationUser } = serverRequire(
+  "./services/notifications",
+);
 
-const {
-  authenticateNotificationSocket,
-} = serverRequire("./services/notifications/socketAuth");
+const { authenticateNotificationSocket } = serverRequire(
+  "./services/notifications/socketAuth",
+);
 
 const USER_A = "507f1f77bcf86cd799439011";
 const USER_B = "507f1f77bcf86cd799439012";
@@ -106,11 +103,9 @@ test("Socket.io authentication, privacy and deactivation", async () => {
     const address = `http://127.0.0.1:${httpServer.address().port}`;
 
     const makeToken = (userId) =>
-      jwt.sign(
-        { payload: { _id: userId, role: "parent" } },
-        TEST_SECRET,
-        { expiresIn: "1h" },
-      );
+      jwt.sign({ payload: { _id: userId, role: "parent" } }, TEST_SECRET, {
+        expiresIn: "1h",
+      });
 
     const makeClient = (token) => {
       const client = createClient(address, {
@@ -126,11 +121,7 @@ test("Socket.io authentication, privacy and deactivation", async () => {
     };
 
     const connect = (client) => {
-      const result = waitForEvent(
-        client,
-        "connect",
-        "connect_error",
-      );
+      const result = waitForEvent(client, "connect", "connect_error");
 
       client.connect();
       return result;
@@ -140,10 +131,7 @@ test("Socket.io authentication, privacy and deactivation", async () => {
     const clientA = makeClient(makeToken(USER_A));
     const clientB = makeClient(makeToken(USER_B));
 
-    await Promise.all([
-      connect(clientA),
-      connect(clientB),
-    ]);
+    await Promise.all([connect(clientA), connect(clientB)]);
 
     assert.equal(clientA.connected, true);
     assert.equal(clientB.connected, true);
@@ -163,10 +151,7 @@ test("Socket.io authentication, privacy and deactivation", async () => {
       messagesForB.push(message);
     });
 
-    const incomingMessage = waitForEvent(
-      clientA,
-      "notification:new",
-    );
+    const incomingMessage = waitForEvent(clientA, "notification:new");
 
     await notify(USER_A, {
       type: "registration.approved",
@@ -176,10 +161,7 @@ test("Socket.io authentication, privacy and deactivation", async () => {
 
     const received = await incomingMessage;
 
-    assert.equal(
-      received.title,
-      "Registration approved",
-    );
+    assert.equal(received.title, "Registration approved");
 
     // User B must not receive User A's notification.
     await delay(150);
@@ -188,10 +170,7 @@ test("Socket.io authentication, privacy and deactivation", async () => {
     // Simulate the administrator deactivating User A.
     users[USER_A].isActive = false;
 
-    const disconnection = waitForEvent(
-      clientA,
-      "disconnect",
-    );
+    const disconnection = waitForEvent(clientA, "disconnect");
 
     disconnectNotificationUser(USER_A);
 
@@ -203,10 +182,7 @@ test("Socket.io authentication, privacy and deactivation", async () => {
     // The deactivated user must not reconnect.
     const inactiveClient = makeClient(makeToken(USER_A));
 
-    await assert.rejects(
-      connect(inactiveClient),
-      /Authentication required/,
-    );
+    await assert.rejects(connect(inactiveClient), /Authentication required/);
   } finally {
     for (const client of clients) {
       client.disconnect();

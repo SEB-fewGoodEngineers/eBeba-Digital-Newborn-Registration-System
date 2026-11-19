@@ -1,4 +1,3 @@
-
 const { test, afterEach } = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -47,10 +46,7 @@ test("saves a notification for the correct recipient", async () => {
   assert.equal(savedData.recipientUserId, USER_ID);
   assert.equal(savedData.type, "registration.approved");
   assert.equal(savedData.title, "Registration approved");
-  assert.equal(
-    savedData.message,
-    "Your application has been approved.",
-  );
+  assert.equal(savedData.message, "Your application has been approved.");
   assert.equal(savedData.babyId, BABY_ID);
   assert.equal(result._id, NOTIFICATION_ID);
 });
@@ -81,10 +77,7 @@ test("sends a live notification only to the recipient room", async () => {
   assert.equal(events.length, 1);
   assert.equal(events[0].room, `user:${USER_ID}`);
   assert.equal(events[0].event, "notification:new");
-  assert.equal(
-    events[0].payload.title,
-    "Registration approved",
-  );
+  assert.equal(events[0].payload.title, "Registration approved");
   assert.equal(events[0].payload.message, sampleNotification.message);
 });
 
@@ -136,16 +129,10 @@ test("notifyMany saves a notification for each recipient", async () => {
     return { _id: NOTIFICATION_ID, ...data };
   };
 
-  const result = await notifyMany(
-    [USER_ID, OTHER_USER_ID],
-    sampleNotification,
-  );
+  const result = await notifyMany([USER_ID, OTHER_USER_ID], sampleNotification);
 
   assert.equal(result.length, 2);
-  assert.deepEqual(
-    savedRecipients.sort(),
-    [USER_ID, OTHER_USER_ID].sort(),
-  );
+  assert.deepEqual(savedRecipients.sort(), [USER_ID, OTHER_USER_ID].sort());
 });
 
 test("a socket failure does not lose a saved notification", async () => {
@@ -217,7 +204,6 @@ test("disconnect is safe when Socket.io is not initialized", () => {
     disconnectNotificationUser(USER_ID);
   });
 });
-
 
 test("medical details are excluded from saved and live notifications", async () => {
   let savedData = null;

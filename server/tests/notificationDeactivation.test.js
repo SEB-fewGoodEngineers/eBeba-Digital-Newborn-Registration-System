@@ -1,4 +1,3 @@
-
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const http = require("node:http");
@@ -8,9 +7,7 @@ const app = require("../app");
 const User = require("../models/User");
 const audit = require("../services/audit");
 const { ROLES } = require("../constants");
-const {
-  setSocketServer,
-} = require("../services/notifications");
+const { setSocketServer } = require("../services/notifications");
 
 const ADMIN_ID = "507f1f77bcf86cd799439011";
 const USER_ID = "507f1f77bcf86cd799439012";

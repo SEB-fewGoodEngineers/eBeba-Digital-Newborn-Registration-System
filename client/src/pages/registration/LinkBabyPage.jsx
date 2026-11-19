@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router";
 import {
@@ -52,11 +51,7 @@ export default function LinkBabyPage() {
                 Birth record number: {linkedBaby.birthRecordNumber}
               </Typography>
 
-              <Button
-                component={Link}
-                to="/babies/mine"
-                variant="contained"
-              >
+              <Button component={Link} to="/babies/mine" variant="contained">
                 View my babies
               </Button>
 
@@ -82,18 +77,12 @@ export default function LinkBabyPage() {
                 <TextField
                   label="Birth record number"
                   value={birthRecordNumber}
-                  onChange={(event) =>
-                    setBirthRecordNumber(event.target.value)
-                  }
+                  onChange={(event) => setBirthRecordNumber(event.target.value)}
                   required
                   fullWidth
                 />
 
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={isSaving}
-                >
+                <Button type="submit" variant="contained" disabled={isSaving}>
                   {isSaving ? "Linking..." : "Link my baby"}
                 </Button>
 

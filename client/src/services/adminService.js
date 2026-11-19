@@ -1,4 +1,3 @@
-
 import { api } from "./api";
 
 export const getAdminUsers = () => api("/admin/users");

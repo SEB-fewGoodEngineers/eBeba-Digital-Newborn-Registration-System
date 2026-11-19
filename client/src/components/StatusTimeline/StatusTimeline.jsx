@@ -40,11 +40,7 @@ export default function StatusTimeline({ history }) {
   // so we invert with `activeStep={history.length - 1}`.
   return (
     <Box>
-      <Stepper
-        orientation="vertical"
-        activeStep={history.length - 1}
-        nonLinear
-      >
+      <Stepper orientation="vertical" activeStep={history.length - 1} nonLinear>
         {history.map((entry, idx) => {
           const isFirst = idx === 0;
           const note = (entry.note || "").trim();
@@ -75,7 +71,9 @@ export default function StatusTimeline({ history }) {
                     <Chip
                       size="small"
                       variant="outlined"
-                      label={ROLE_LABELS[entry.byUser.role] || entry.byUser.role}
+                      label={
+                        ROLE_LABELS[entry.byUser.role] || entry.byUser.role
+                      }
                     />
                   )}
                 </Box>

@@ -1,10 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert");
 
-const {
-  createBabySchema,
-  linkBabySchema,
-} = require("../validators/babies");
+const { createBabySchema, linkBabySchema } = require("../validators/babies");
 
 const { GENDERS, FAMILY_TYPES } = require("../constants");
 
@@ -92,7 +89,6 @@ test("removes fields controlled by the server", () => {
   assert.strictEqual(result.data.createdByUserId, undefined);
   assert.strictEqual(result.data.birthRecordNumber, undefined);
 });
-
 
 test("accepts a valid birth record number", () => {
   const result = linkBabySchema.safeParse({

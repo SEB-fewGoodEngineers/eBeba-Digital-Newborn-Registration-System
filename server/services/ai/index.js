@@ -52,19 +52,22 @@ const suggest = async (kind, input) => {
 Analyze the following synthetic input data and return ONLY a valid JSON object with a "flags" array. Each flag must contain "field" and a single plain-English sentence "message" explaining the difference or issue. No markdown, no extra text.
 Input: ${JSON.stringify(input)}`;
 
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+      const response = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: process.env.AI_MODEL || "gpt-4o-mini",
+            messages: [{ role: "user", content: prompt }],
+            response_format: { type: "json_object" },
+          }),
+          signal: controller.signal,
         },
-        body: JSON.stringify({
-          model: process.env.AI_MODEL || "gpt-4o-mini",
-          messages: [{ role: "user", content: prompt }],
-          response_format: { type: "json_object" },
-        }),
-        signal: controller.signal,
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`AI provider error: ${response.statusText}`);
@@ -80,7 +83,10 @@ Input: ${JSON.stringify(input)}`;
     // Provera strukture odgovora pomoću Zod šeme
     const parsed = aiResponseSchema.safeParse(rawResult);
     if (!parsed.success) {
-      console.error("[AI Service] Invalid response shape from AI provider", parsed.error);
+      console.error(
+        "[AI Service] Invalid response shape from AI provider",
+        parsed.error,
+      );
       return { available: false, provider };
     }
 
@@ -97,4 +103,3 @@ Input: ${JSON.stringify(input)}`;
 };
 
 module.exports = { suggest };
-

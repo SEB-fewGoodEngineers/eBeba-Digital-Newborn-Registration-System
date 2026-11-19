@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -102,8 +101,7 @@ export default function MyBabiesPage() {
                   </Typography>
 
                   <Typography>
-                    Mother: {baby.mother?.firstName}{" "}
-                    {baby.mother?.lastName}
+                    Mother: {baby.mother?.firstName} {baby.mother?.lastName}
                   </Typography>
 
                   <Typography>

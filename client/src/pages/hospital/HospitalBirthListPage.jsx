@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -84,13 +83,9 @@ export default function HospitalBirthListPage() {
         sx={{ mb: 3 }}
       />
 
-      {status === "loading" && (
-        <CircularProgress aria-label="Loading" />
-      )}
+      {status === "loading" && <CircularProgress aria-label="Loading" />}
 
-      {status === "error" && (
-        <Alert severity="error">{error}</Alert>
-      )}
+      {status === "error" && <Alert severity="error">{error}</Alert>}
 
       {status === "ready" && babies.length === 0 && (
         <Typography>
@@ -121,17 +116,14 @@ export default function HospitalBirthListPage() {
                 <TableRow key={baby._id}>
                   <TableCell>{baby.birthRecordNumber}</TableCell>
 
-                  <TableCell>
-                    {formatDateTime(baby.birthDateTime)}
-                  </TableCell>
+                  <TableCell>{formatDateTime(baby.birthDateTime)}</TableCell>
 
                   <TableCell>
                     {baby.gender === "M" ? "Male" : "Female"}
                   </TableCell>
 
                   <TableCell>
-                    {baby.mother.firstName}{" "}
-                    {baby.mother.lastName}
+                    {baby.mother.firstName} {baby.mother.lastName}
                   </TableCell>
 
                   <TableCell>{baby.municipalityOfBirth}</TableCell>

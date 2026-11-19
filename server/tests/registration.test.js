@@ -103,9 +103,7 @@ const { reviewDecisionSchema } = require("../validators/registrations");
 test("return/reject: requires reviewerNotes", () => {
   const result = reviewDecisionSchema.safeParse({});
   assert.strictEqual(result.success, false);
-  assert.ok(
-    result.error.issues.some((i) => i.path[0] === "reviewerNotes"),
-  );
+  assert.ok(result.error.issues.some((i) => i.path[0] === "reviewerNotes"));
 });
 
 test("return/reject: accepts a real note and trims it", () => {

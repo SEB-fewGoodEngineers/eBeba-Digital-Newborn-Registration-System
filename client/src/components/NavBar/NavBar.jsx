@@ -1,4 +1,3 @@
-
 import { Link as RouterLink, useNavigate } from "react-router";
 import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
 import { useUser } from "../../contexts/UserContext";

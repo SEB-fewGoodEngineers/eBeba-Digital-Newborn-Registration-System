@@ -112,7 +112,8 @@ export const registerSigningKey = async (passphrase) => {
  */
 export const signApprovalPayload = async (passphrase, payload) => {
   const stored = await idbGet(KEY_ID);
-  if (!stored) throw new Error("No signing key on this device. Register one first.");
+  if (!stored)
+    throw new Error("No signing key on this device. Register one first.");
 
   const salt = new Uint8Array(stored.wrapped.salt);
   const iv = new Uint8Array(stored.wrapped.iv);

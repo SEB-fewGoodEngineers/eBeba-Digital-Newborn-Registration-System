@@ -25,8 +25,7 @@ export const createGrowthMeasurement = (babyId, measurement) =>
     body: measurement,
   });
 
-export const getMilestones = (babyId) =>
-  api(`/babies/${babyId}/milestones`);
+export const getMilestones = (babyId) => api(`/babies/${babyId}/milestones`);
 
 export const createMilestone = (babyId, milestone) =>
   api(`/babies/${babyId}/milestones`, {

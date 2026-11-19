@@ -1,4 +1,3 @@
-
 import { Navigate, Route, Routes } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
 

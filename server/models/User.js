@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema(
     },
     signingPublicKey: { type: Object, default: undefined },
     signingPublicKeyRegisteredAt: { type: Date },
-    
+
     // Optional and unique: no default, so users without it are not indexed
     googleId: { type: String, unique: true, sparse: true },
     phoneNumber: { type: String, trim: true },

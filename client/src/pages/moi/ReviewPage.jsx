@@ -637,8 +637,8 @@ export default function ReviewPage() {
           <DialogContentText sx={{ mb: 2 }}>
             This key is created in this browser and stored only on this device.
             It is wrapped with a key derived from your passphrase (PBKDF2). The
-            passphrase never leaves this device. You will enter it each time
-            you approve an application.
+            passphrase never leaves this device. You will enter it each time you
+            approve an application.
           </DialogContentText>
           <TextField
             label="Passphrase"
@@ -697,16 +697,12 @@ export default function ReviewPage() {
       {/* ── Sign-approval dialog ────────────────────────────────────── */}
       <Dialog
         open={approveDialogOpen}
-        onClose={
-          isApproving ? undefined : () => setApproveDialogOpen(false)
-        }
+        onClose={isApproving ? undefined : () => setApproveDialogOpen(false)}
         aria-labelledby="sign-approve-title"
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle id="sign-approve-title">
-          Sign this approval
-        </DialogTitle>
+        <DialogTitle id="sign-approve-title">Sign this approval</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
             Enter your passphrase to sign the approval with your key. The

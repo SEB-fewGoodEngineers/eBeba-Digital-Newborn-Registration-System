@@ -1,4 +1,3 @@
-
 const { test, beforeEach, afterEach } = require("node:test");
 const assert = require("node:assert/strict");
 const jwt = require("jsonwebtoken");
@@ -30,16 +29,12 @@ afterEach(() => {
 });
 
 const makeToken = (id = USER_ID, options = {}) =>
-  jwt.sign(
-    { payload: { _id: id, role: "parent" } },
-    TEST_SECRET,
-    { expiresIn: "1h", ...options },
-  );
+  jwt.sign({ payload: { _id: id, role: "parent" } }, TEST_SECRET, {
+    expiresIn: "1h",
+    ...options,
+  });
 
-const runAuth = async (
-  token,
-  user = { _id: USER_ID, isActive: true },
-) => {
+const runAuth = async (token, user = { _id: USER_ID, isActive: true }) => {
   let databaseCalls = 0;
   let callbackCalls = 0;
   let authError;

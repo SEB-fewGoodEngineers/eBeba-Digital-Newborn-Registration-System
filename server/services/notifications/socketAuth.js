@@ -1,10 +1,8 @@
-
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const User = require("../../models/User");
 
-const authenticationError = () =>
-  new Error("Authentication required.");
+const authenticationError = () => new Error("Authentication required.");
 
 // Authenticate a Socket.io connection using the existing JWT format.
 const authenticateNotificationSocket = async (socket, next) => {

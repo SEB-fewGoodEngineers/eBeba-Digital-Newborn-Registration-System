@@ -1,4 +1,3 @@
-
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const http = require("node:http");
@@ -150,10 +149,7 @@ test("Story 1.4 - Correct a birth record", async (t) => {
       const result = await updateBirth();
 
       assert.equal(result.status, 409);
-      assert.equal(
-        result.body.err,
-        "The parents have already applied.",
-      );
+      assert.equal(result.body.err, "The parents have already applied.");
       assert.equal(saveCount, 1);
     });
 
@@ -166,15 +162,9 @@ test("Story 1.4 - Correct a birth record", async (t) => {
       assert.equal(entry.targetCollection, "babies");
       assert.equal(String(entry.targetDocumentId), BABY_ID);
 
-      assert.equal(
-        entry.changes.before.municipalityOfBirth,
-        "Podgorica",
-      );
+      assert.equal(entry.changes.before.municipalityOfBirth, "Podgorica");
 
-      assert.equal(
-        entry.changes.after.municipalityOfBirth,
-        "Niksic",
-      );
+      assert.equal(entry.changes.after.municipalityOfBirth, "Niksic");
     });
   } finally {
     User.findById = originalFindUser;

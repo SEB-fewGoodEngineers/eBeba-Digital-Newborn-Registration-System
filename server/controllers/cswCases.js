@@ -1,10 +1,7 @@
 const express = require("express");
 const CswCase = require("../models/CswCase");
 const Baby = require("../models/Baby");
-const {
-  verifyToken,
-  requireRole,
-} = require("../middleware/auth");
+const { verifyToken, requireRole } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
@@ -59,7 +56,12 @@ router.post(
       return res.status(404).json({ err: "CSW case not found." });
     }
 
-    workflow.transition(cswCase, CSW_CASE_STATUS.IN_PROGRESS, req.user, "Started processing");
+    workflow.transition(
+      cswCase,
+      CSW_CASE_STATUS.IN_PROGRESS,
+      req.user,
+      "Started processing",
+    );
     cswCase.processedByUserId = req.user._id;
     await cswCase.save();
 
@@ -88,7 +90,12 @@ router.post(
       return res.status(404).json({ err: "CSW case not found." });
     }
 
-    workflow.transition(cswCase, CSW_CASE_STATUS.COMPLETED, req.user, "Completed");
+    workflow.transition(
+      cswCase,
+      CSW_CASE_STATUS.COMPLETED,
+      req.user,
+      "Completed",
+    );
     cswCase.socialCardNumber = workflow.generateNumber("SC");
     cswCase.completedAt = new Date();
     cswCase.processedByUserId = req.user._id;
@@ -131,7 +138,12 @@ router.post(
       return res.status(404).json({ err: "CSW case not found." });
     }
 
-    workflow.transition(cswCase, CSW_CASE_STATUS.REJECTED, req.user, req.body.notes);
+    workflow.transition(
+      cswCase,
+      CSW_CASE_STATUS.REJECTED,
+      req.user,
+      req.body.notes,
+    );
     cswCase.notes = req.body.notes;
     cswCase.processedByUserId = req.user._id;
     await cswCase.save();

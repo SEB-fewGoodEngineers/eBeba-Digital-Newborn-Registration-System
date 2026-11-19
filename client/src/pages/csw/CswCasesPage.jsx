@@ -139,7 +139,10 @@ export default function CswCasesPage() {
                           </Typography>
                         }
                         secondary={
-                          <Box component="span" sx={{ display: "block", mt: 0.5 }}>
+                          <Box
+                            component="span"
+                            sx={{ display: "block", mt: 0.5 }}
+                          >
                             {baby.jmbg && (
                               <Typography
                                 variant="body2"
@@ -149,10 +152,17 @@ export default function CswCasesPage() {
                                 JMBG: {baby.jmbg} <DemoBadge />
                               </Typography>
                             )}
-                            <Typography variant="body2" component="span" display="block">
+                            <Typography
+                              variant="body2"
+                              component="span"
+                              display="block"
+                            >
                               Created: {formatDate(c.createdAt)}
                             </Typography>
-                            <Box component="span" sx={{ display: "inline-block", mt: 1 }}>
+                            <Box
+                              component="span"
+                              sx={{ display: "inline-block", mt: 1 }}
+                            >
                               <StatusBadge status={c.status} />
                             </Box>
                           </Box>
@@ -189,7 +199,11 @@ export default function CswCasesPage() {
                 )}
 
                 {selectedCase.notes && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 1 }}
+                  >
                     Notes: {selectedCase.notes}
                   </Typography>
                 )}
@@ -265,7 +279,9 @@ export default function CswCasesPage() {
                         Complete & Issue Social Card
                       </Button>
 
-                      <Box sx={{ display: "flex", gap: 1, width: "100%", mt: 1 }}>
+                      <Box
+                        sx={{ display: "flex", gap: 1, width: "100%", mt: 1 }}
+                      >
                         <TextField
                           label="Rejection Reason"
                           size="small"

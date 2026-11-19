@@ -1,7 +1,7 @@
 const express = require("express");
 const { verifyToken, requireRole } = require("../middleware/auth");
-const { ROLES } = require('../constants');
-const asyncHandler = require('../middleware/asyncHandler');
+const { ROLES } = require("../constants");
+const asyncHandler = require("../middleware/asyncHandler");
 const router = express.Router();
 
 // GET MY PROFILE
@@ -22,7 +22,7 @@ router.post(
     if (
       !publicJwk ||
       publicJwk.kty !== "RSA" ||
-      publicJwk.alg !== "RSA-OAEP-256" && publicJwk.alg !== undefined ||
+      (publicJwk.alg !== "RSA-OAEP-256" && publicJwk.alg !== undefined) ||
       !publicJwk.n ||
       !publicJwk.e
     ) {

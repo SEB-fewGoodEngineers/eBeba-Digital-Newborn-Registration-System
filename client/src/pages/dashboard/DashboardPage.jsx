@@ -1,5 +1,4 @@
-﻿
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router";
 import {
   Alert,
@@ -81,9 +80,7 @@ export default function DashboardPage() {
 
         {babies.length === 0 ? (
           <Stack spacing={2}>
-            <Typography>
-              No babies linked to your account yet.
-            </Typography>
+            <Typography>No babies linked to your account yet.</Typography>
             <Button
               component={RouterLink}
               to="/babies/link"
@@ -110,13 +107,9 @@ export default function DashboardPage() {
                     Born: {formatDateTime(baby.birthDateTime)}
                   </Typography>
 
-                  <Typography>
-                    Gender: {baby.gender}
-                  </Typography>
+                  <Typography>Gender: {baby.gender}</Typography>
 
-                  <Typography>
-                    Place of birth: {baby.placeOfBirth}
-                  </Typography>
+                  <Typography>Place of birth: {baby.placeOfBirth}</Typography>
 
                   <Typography>
                     Municipality: {baby.municipalityOfBirth}
@@ -142,11 +135,7 @@ export default function DashboardPage() {
                   </Typography>
 
                   <Stack spacing={1}>
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      alignItems="center"
-                    >
+                    <Stack direction="row" spacing={2} alignItems="center">
                       <Typography>MoI:</Typography>
 
                       {baby.registrationStatus ? (
@@ -165,10 +154,9 @@ export default function DashboardPage() {
                           </Typography>
 
                           <Typography variant="body2">
-                            The MoI officer has returned your
-                            application for correction. Please review
-                            the officer's comments, correct your
-                            application, and submit it again.
+                            The MoI officer has returned your application for
+                            correction. Please review the officer's comments,
+                            correct your application, and submit it again.
                           </Typography>
 
                           <Button
@@ -184,20 +172,12 @@ export default function DashboardPage() {
                       </Alert>
                     )}
 
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      alignItems="center"
-                    >
+                    <Stack direction="row" spacing={2} alignItems="center">
                       <Typography>CSW:</Typography>
                       <StatusBadge status={baby.cswStatus} />
                     </Stack>
 
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      alignItems="center"
-                    >
+                    <Stack direction="row" spacing={2} alignItems="center">
                       <Typography>FZO:</Typography>
                       <StatusBadge status={baby.insuranceStatus} />
                     </Stack>
@@ -216,19 +196,13 @@ export default function DashboardPage() {
                         Download certificate
                       </Button>
 
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                      >
+                      <Typography variant="caption" color="text.secondary">
                         Certificate download is not available yet.
                       </Typography>
                     </Stack>
                   )}
 
-                  <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    spacing={2}
-                  >
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                     <Button
                       component={RouterLink}
                       to={`/babies/${baby._id}/medical-records`}

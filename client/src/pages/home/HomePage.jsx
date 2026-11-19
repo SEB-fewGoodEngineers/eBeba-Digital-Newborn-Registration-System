@@ -1,12 +1,5 @@
-
 import { Link as RouterLink } from "react-router";
-import {
-  Box,
-  Button,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 
 import { useUser } from "../../contexts/UserContext";
 import { ROLE_LABELS, ROLES } from "../../constants/labels";
@@ -40,27 +33,15 @@ export default function HomePage() {
             useFlexGap
             flexWrap="wrap"
           >
-            <Button
-              component={RouterLink}
-              to="/dashboard"
-              variant="contained"
-            >
+            <Button component={RouterLink} to="/dashboard" variant="contained">
               My Dashboard
             </Button>
 
-            <Button
-              component={RouterLink}
-              to="/babies/mine"
-              variant="outlined"
-            >
+            <Button component={RouterLink} to="/babies/mine" variant="outlined">
               My Babies
             </Button>
 
-            <Button
-              component={RouterLink}
-              to="/babies/link"
-              variant="outlined"
-            >
+            <Button component={RouterLink} to="/babies/link" variant="outlined">
               Link My Baby
             </Button>
 
@@ -81,10 +62,7 @@ export default function HomePage() {
             Hospital Portal
           </Typography>
 
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-          >
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
             <Button
               component={RouterLink}
               to="/hospital/babies"

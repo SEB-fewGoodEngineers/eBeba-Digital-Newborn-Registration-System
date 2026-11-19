@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -260,11 +259,7 @@ export default function AdminUsersPage() {
               ))}
             </TextField>
 
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={saving}
-            >
+            <Button type="submit" variant="contained" disabled={saving}>
               {saving ? "Creating..." : "Create staff user"}
             </Button>
           </Stack>
@@ -300,17 +295,11 @@ export default function AdminUsersPage() {
 
                   <TableCell>{user.email}</TableCell>
 
-                  <TableCell>
-                    {ROLE_LABELS[user.role] || user.role}
-                  </TableCell>
+                  <TableCell>{ROLE_LABELS[user.role] || user.role}</TableCell>
 
-                  <TableCell>
-                    {user.institutionId?.name || "—"}
-                  </TableCell>
+                  <TableCell>{user.institutionId?.name || "—"}</TableCell>
 
-                  <TableCell>
-                    {user.isActive ? "Active" : "Inactive"}
-                  </TableCell>
+                  <TableCell>{user.isActive ? "Active" : "Inactive"}</TableCell>
 
                   <TableCell>
                     <Button
@@ -318,8 +307,7 @@ export default function AdminUsersPage() {
                       size="small"
                       variant="outlined"
                       disabled={
-                        user._id === currentUser?._id ||
-                        updatingId !== null
+                        user._id === currentUser?._id || updatingId !== null
                       }
                       onClick={() => handleStatusChange(user)}
                     >
