@@ -36,6 +36,7 @@ import {
 import { runPrecheck, decideFlag } from "../../services/aiSuggestionService";
 import {
   hasSigningKey,
+  getStoredSigningPublicKey,
   registerSigningKey,
   signApprovalPayload,
 } from "../../services/signingKey";
@@ -52,12 +53,12 @@ function CompareRow({ label, proposed, record }) {
     record !== undefined;
   return (
     <Grid container spacing={1} sx={{ py: 0.5 }}>
-      <Grid item xs={4}>
+      <Grid size={4}>
         <Typography variant="body2" color="text.secondary">
           {label}
         </Typography>
       </Grid>
-      <Grid item xs={4}>
+      <Grid size={4}>
         <Typography variant="body2">
           {orDash(proposed)}
           {differs && (
@@ -72,7 +73,7 @@ function CompareRow({ label, proposed, record }) {
           )}
         </Typography>
       </Grid>
-      <Grid item xs={4}>
+      <Grid size={4}>
         <Typography variant="body2">{orDash(record)}</Typography>
       </Grid>
     </Grid>
@@ -100,6 +101,9 @@ export default function ReviewPage() {
   const [keyConfirmPassphrase, setKeyConfirmPassphrase] = useState("");
   const [keyError, setKeyError] = useState("");
   const [keySubmitting, setKeySubmitting] = useState(false);
+  const [syncingKey, setSyncingKey] = useState(false);
+  const [syncError, setSyncError] = useState("");
+  const [syncSuccess, setSyncSuccess] = useState(false);
 
   // Sign-approval dialog
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
@@ -185,6 +189,30 @@ export default function ReviewPage() {
     }
   };
 
+  // Re-register the public part of an existing local signing key.
+  // Never regenerates, exports or sends the private key.
+  const handleSyncSigningKey = async () => {
+    setSyncingKey(true);
+    setSyncError("");
+    setSyncSuccess(false);
+    try {
+      const publicJwk = await getStoredSigningPublicKey();
+      if (!publicJwk) {
+        throw new Error("No signing key found on this device.");
+      }
+      await api("/users/me/signing-key", {
+        method: "POST",
+        body: { publicJwk },
+      });
+      setSigningKeyReady(true);
+      setSyncSuccess(true);
+    } catch (err) {
+      setSyncError(err.message || "Could not register the public signing key.");
+    } finally {
+      setSyncingKey(false);
+    }
+  };
+
   const handleOpenApprove = () => {
     setApprovePassphrase("");
     setApproveConfirm(false);
@@ -229,12 +257,21 @@ export default function ReviewPage() {
   };
 
   const handleSignCertificate = async () => {
-    if (!approved?.certificateId) return;
+    const certificateId = approved?.certificateId || data?.certificate?.id;
+    if (!certificateId) {
+      setSignError("Certificate not found.");
+      return;
+    }
+
     setSignError("");
     setIsSigning(true);
     try {
-      await signCertificate(approved.certificateId);
+      await signCertificate(certificateId);
       setCertificateSigned(true);
+      setData((current) => ({
+        ...current,
+        certificate: { id: certificateId, pdfGenerated: true },
+      }));
     } catch (err) {
       setSignError(err.message);
     } finally {
@@ -349,14 +386,16 @@ export default function ReviewPage() {
   const motherLast = baby.mother?.lastName;
   const fatherLast = baby.father?.lastName;
   const canDecide = registration.status === "pending";
+  const certificateId = approved?.certificateId || data.certificate?.id;
+  const isCertificateReady =
+    certificateSigned || Boolean(data.certificate?.pdfGenerated);
 
   return (
     <Box sx={{ maxWidth: 1200, mx: "auto", mt: 4, px: 2 }}>
       <Stack
         direction="row"
-        alignItems="center"
         spacing={2}
-        sx={{ mb: 2, flexWrap: "wrap" }}
+        sx={{ mb: 2, flexWrap: "wrap", alignItems: "center" }}
       >
         <Typography variant="h5" component="h1">
           Review application
@@ -401,50 +440,88 @@ export default function ReviewPage() {
         )}
       </Stack>
 
-      {approved && (
+      {canDecide && signingKeyReady === true && (
+        <Box sx={{ mb: 2 }}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handleSyncSigningKey}
+            disabled={syncingKey}
+            type="button"
+          >
+            {syncingKey ? "Syncing signing key…" : "Sync existing signing key"}
+          </Button>
+          {syncSuccess && (
+            <Alert severity="success" sx={{ mt: 1 }}>
+              The public signing key was registered on the server.
+            </Alert>
+          )}
+          {syncError && (
+            <Alert severity="error" sx={{ mt: 1 }}>
+              {syncError}
+            </Alert>
+          )}
+        </Box>
+      )}
+
+      {(approved || registration.status === "approved") && (
         <Alert severity="success" sx={{ mb: 2 }}>
           <Stack
             direction="row"
-            alignItems="center"
             spacing={1}
-            sx={{ mb: 1, flexWrap: "wrap" }}
+            sx={{ mb: 1, flexWrap: "wrap", alignItems: "center" }}
           >
-            <Typography variant="subtitle2">Approved.</Typography>
-            <Typography
-              variant="body2"
-              sx={{ fontFamily: "monospace", letterSpacing: 1 }}
-            >
-              {approved.jmbg}
-            </Typography>
-            <DemoBadge />
+            <Typography variant="subtitle2">Application approved</Typography>
+            {approved?.jmbg && (
+              <>
+                <Typography
+                  variant="body2"
+                  sx={{ fontFamily: "monospace", letterSpacing: 1 }}
+                >
+                  {approved.jmbg}
+                </Typography>
+                <DemoBadge />
+              </>
+            )}
           </Stack>
 
-          {approved.certificateNumber && (
+          {approved?.certificateNumber && (
             <Typography variant="caption" display="block" sx={{ mb: 1 }}>
               Certificate: {approved.certificateNumber}
             </Typography>
           )}
 
-          {approved.certificateId && (
+          {certificateId ? (
             <Box sx={{ mt: 1 }}>
               <Button
                 variant="outlined"
                 onClick={handleSignCertificate}
-                disabled={isSigning || certificateSigned}
+                disabled={isSigning || isCertificateReady}
                 type="button"
               >
-                {certificateSigned
+                {isCertificateReady
                   ? "Certificate signed"
                   : isSigning
                     ? "Signing…"
                     : "Sign certificate"}
               </Button>
+
+              {isCertificateReady && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Certificate PDF is ready for download.
+                </Typography>
+              )}
+
               {signError && (
                 <Alert severity="error" sx={{ mt: 1 }}>
                   {signError}
                 </Alert>
               )}
             </Box>
+          ) : (
+            <Alert severity="warning" sx={{ mt: 1 }}>
+              No certificate found for this approved application.
+            </Alert>
           )}
         </Alert>
       )}
@@ -462,7 +539,7 @@ export default function ReviewPage() {
 
       <Grid container spacing={2}>
         {/* LEFT — the application */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -495,7 +572,7 @@ export default function ReviewPage() {
         </Grid>
 
         {/* RIGHT — the hospital's birth record */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -574,13 +651,13 @@ export default function ReviewPage() {
             Compare
           </Typography>
           <Grid container spacing={1} sx={{ mb: 0.5 }}>
-            <Grid item xs={4} />
-            <Grid item xs={4}>
+            <Grid size={4} />
+            <Grid size={4}>
               <Typography variant="caption" color="text.secondary">
                 Proposed
               </Typography>
             </Grid>
-            <Grid item xs={4}>
+            <Grid size={4}>
               <Typography variant="caption" color="text.secondary">
                 Birth record
               </Typography>

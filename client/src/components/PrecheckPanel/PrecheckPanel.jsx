@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   Alert,
@@ -29,6 +30,7 @@ export default function PrecheckPanel({
 
   const handleDecide = async (flagId, decision) => {
     setLocalBusyFlagId(flagId);
+
     try {
       await onDecide(flagId, decision);
     } finally {
@@ -44,11 +46,15 @@ export default function PrecheckPanel({
       <CardContent>
         <Stack
           direction="row"
-          alignItems="center"
           spacing={2}
-          sx={{ mb: 1, flexWrap: "wrap" }}
+          sx={{
+            mb: 1,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
         >
           <Typography variant="h6">AI pre-check</Typography>
+
           <Button
             variant="outlined"
             onClick={onRun}
@@ -73,7 +79,13 @@ export default function PrecheckPanel({
         )}
 
         {isRunning && !suggestion && (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              py: 2,
+            }}
+          >
             <CircularProgress aria-label="Running pre-check" />
           </Box>
         )}
@@ -88,34 +100,57 @@ export default function PrecheckPanel({
           <Stack divider={<Divider flexItem />} spacing={1}>
             {suggestion.flags.map((flag) => {
               const isPending = flag.decision === "pending";
-              const isBusy = localBusyFlagId === flag._id || isDeciding;
+              const isBusy =
+                localBusyFlagId === flag._id || isDeciding;
+
               return (
                 <Box key={flag._id}>
                   <Stack
                     direction="row"
-                    alignItems="center"
                     spacing={1}
-                    sx={{ mb: 0.5, flexWrap: "wrap" }}
+                    sx={{
+                      mb: 0.5,
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                    }}
                   >
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                    >
                       {flag.field}
                     </Typography>
+
                     <Chip
                       label={flag.source === "ai" ? "AI" : "Rule"}
                       size="small"
-                      color={flag.source === "ai" ? "info" : "default"}
+                      color={
+                        flag.source === "ai" ? "info" : "default"
+                      }
                       variant="outlined"
                     />
+
                     {flag.decision === "accepted" && (
-                      <Chip label="Accepted" size="small" color="success" />
+                      <Chip
+                        label="Accepted"
+                        size="small"
+                        color="success"
+                      />
                     )}
+
                     {flag.decision === "dismissed" && (
-                      <Chip label="Dismissed" size="small" color="default" />
+                      <Chip
+                        label="Dismissed"
+                        size="small"
+                        color="default"
+                      />
                     )}
                   </Stack>
+
                   <Typography variant="body2" sx={{ mb: 1 }}>
                     {flag.message}
                   </Typography>
+
                   {isPending && (
                     <Stack direction="row" spacing={1}>
                       <Button
@@ -130,6 +165,7 @@ export default function PrecheckPanel({
                       >
                         Accept
                       </Button>
+
                       <Button
                         size="small"
                         variant="outlined"
@@ -155,8 +191,9 @@ export default function PrecheckPanel({
             color="text.secondary"
             sx={{ display: "block", mt: 2 }}
           >
-            Flags are suggestions only. They never change the application
-            status. Provider: {suggestion.provider || "mock"}.
+            Flags are suggestions only. They never change the
+            application status. Provider:{" "}
+            {suggestion.provider || "mock"}.
           </Typography>
         )}
       </CardContent>

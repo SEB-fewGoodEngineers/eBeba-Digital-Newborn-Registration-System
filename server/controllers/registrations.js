@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const crypto = require("node:crypto");
 
 const Registration = require("../models/Registration");
 const Baby = require("../models/Baby");
@@ -9,7 +10,6 @@ const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
 const Certificate = require("../models/Certificate");
 const { verifyApprovalSignature, canonicalApprovalPayload } = require("../services/singing");
-const { approveRegistrationSchema } = require("../validators/registrations");
 const User = require('../models/User');
 const {
   approveRegistration: approveRegistrationService,
@@ -22,6 +22,7 @@ const {
   updateRegistrationSchema,
   listRegistrationsQuerySchema,
   reviewDecisionSchema,
+  approveRegistrationSchema,
 } = require("../validators/registrations");
 
 const { ROLES, REGISTRATION_STATUS } = require("../constants");
@@ -289,7 +290,17 @@ router.get(
           }
         : null;
 
+    // Existing certificate for an approved application; no new certificate is created.
+    const certificate = await Certificate.findOne({
+  registrationId: registration._id,
+})
+  .select("_id pdfGenerated")
+  .lean();
+
     res.status(200).json({
+      certificate: certificate
+        ? { id: certificate._id, pdfGenerated: Boolean(certificate.pdfGenerated) }
+        : null,
       registration: {
         _id: registration._id,
         proposedFirstName: registration.proposedFirstName,
@@ -435,7 +446,6 @@ router.post(
       certificateNumber: certificate?.certificateNumber ?? null,
       verificationCode: certificate?.verificationCode ?? null,
       issuedAt: certificate?.issuedAt ?? null,
-      certificateId: certificate?._id ?? null,
     });
   }),
 );

@@ -173,3 +173,8 @@ export const clearSigningKey = () =>
       })
       .catch((err) => reject(err)); // Safely catches errors if openDB fails
   });
+
+export const getStoredSigningPublicKey = async () => {
+  const stored = await idbGet(KEY_ID);
+  return stored?.publicJwk || null;
+};
