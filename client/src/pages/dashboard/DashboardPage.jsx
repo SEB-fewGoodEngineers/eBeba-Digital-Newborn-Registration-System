@@ -1,4 +1,5 @@
-﻿import { useEffect, useState } from "react";
+﻿
+import { useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router";
 import {
   Alert,
@@ -104,19 +105,27 @@ export default function DashboardPage() {
                   <Typography>
                     Birth record: {baby.birthRecordNumber}
                   </Typography>
+
                   <Typography>
                     Born: {formatDateTime(baby.birthDateTime)}
                   </Typography>
-                  <Typography>Gender: {baby.gender}</Typography>
+
+                  <Typography>
+                    Gender: {baby.gender}
+                  </Typography>
+
                   <Typography>
                     Place of birth: {baby.placeOfBirth}
                   </Typography>
+
                   <Typography>
                     Municipality: {baby.municipalityOfBirth}
                   </Typography>
+
                   <Typography>
                     Birth weight: {baby.birthWeightGrams ?? "N/A"} g
                   </Typography>
+
                   <Typography>
                     Birth length: {baby.birthLengthCm ?? "N/A"} cm
                   </Typography>
@@ -133,8 +142,13 @@ export default function DashboardPage() {
                   </Typography>
 
                   <Stack spacing={1}>
-                    <Stack direction="row" spacing={2} alignItems="center">
+                    <Stack
+                      direction="row"
+                      spacing={2}
+                      alignItems="center"
+                    >
                       <Typography>MoI:</Typography>
+
                       {baby.registrationStatus ? (
                         <StatusBadge status={baby.registrationStatus} />
                       ) : (
@@ -142,12 +156,48 @@ export default function DashboardPage() {
                       )}
                     </Stack>
 
-                    <Stack direction="row" spacing={2} alignItems="center">
+                    {/* RETURNED APPLICATION - PARENT ACTION */}
+                    {baby.registrationStatus === "returned" && (
+                      <Alert severity="warning" sx={{ mt: 2 }}>
+                        <Stack spacing={2}>
+                          <Typography variant="subtitle1">
+                            Action required - Application returned
+                          </Typography>
+
+                          <Typography variant="body2">
+                            The MoI officer has returned your
+                            application for correction. Please review
+                            the officer's comments, correct your
+                            application, and submit it again.
+                          </Typography>
+
+                          <Button
+                            component={RouterLink}
+                            to="/registration/apply"
+                            variant="contained"
+                            color="warning"
+                            sx={{ alignSelf: "flex-start" }}
+                          >
+                            View Feedback & Correct Application
+                          </Button>
+                        </Stack>
+                      </Alert>
+                    )}
+
+                    <Stack
+                      direction="row"
+                      spacing={2}
+                      alignItems="center"
+                    >
                       <Typography>CSW:</Typography>
                       <StatusBadge status={baby.cswStatus} />
                     </Stack>
 
-                    <Stack direction="row" spacing={2} alignItems="center">
+                    <Stack
+                      direction="row"
+                      spacing={2}
+                      alignItems="center"
+                    >
                       <Typography>FZO:</Typography>
                       <StatusBadge status={baby.insuranceStatus} />
                     </Stack>
@@ -165,7 +215,11 @@ export default function DashboardPage() {
                       <Button variant="outlined" disabled>
                         Download certificate
                       </Button>
-                      <Typography variant="caption" color="text.secondary">
+
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                      >
                         Certificate download is not available yet.
                       </Typography>
                     </Stack>
