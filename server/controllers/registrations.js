@@ -525,15 +525,24 @@ router.post(
       return res.status(404).json({ err: "Application not found." });
     }
 
-    const registration = await Registration.findById(registrationId)
-      .populate({
-        path: "statusHistory.byUserId",
-        select: "firstName lastName role",
-      })
-      .lean();
+    // The workflow needs a Mongoose document because it saves the transition.
+    const registration = await Registration.findById(registrationId);
 
     if (!registration) {
       return res.status(404).json({ err: "Application not found." });
+    }
+
+    // Only the parent who submitted this application can resubmit it.
+    if (!registration.submittedByUserId.equals(req.user._id)) {
+      return res.status(403).json({
+        err: "You do not have access to this application.",
+      });
+    }
+
+    if (registration.status !== REGISTRATION_STATUS.RETURNED) {
+      return res.status(409).json({
+        err: "Only returned applications can be resubmitted.",
+      });
     }
 
     try {
