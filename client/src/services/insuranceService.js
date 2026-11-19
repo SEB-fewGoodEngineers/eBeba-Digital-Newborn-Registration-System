@@ -1,21 +1,22 @@
-const BASE_URL = import.meta.env.VITE_BACK_END_SERVER_URL;
+import { api } from "./api";
 
-export const downloadInsuranceCardPdf = async (babyId) => {
-  const token = localStorage.getItem("token");
+export const getInsuranceRecords = () => api("/insurance-records");
 
-  console.log("--> Pokušaj preuzimanja PDF-a za babyId:", babyId);
-  console.log("--> Puna URL adresa:", `${BASE_URL}/insurance-records/babies/${babyId}/insurance-card/pdf`);
+export const getInsuranceRecord = (recordId) =>
+  api(`/insurance-records/${recordId}`);
 
-  const res = await fetch(`${BASE_URL}/insurance-records/babies/${babyId}/insurance-card/pdf`, {
-    headers: { Authorization: `Bearer ${token}` },
+export const startInsuranceRecord = (recordId) =>
+  api(`/insurance-records/${recordId}/start`, { method: "POST" });
+
+export const issueInsurance = (recordId, insuredParentId) =>
+  api(`/insurance-records/${recordId}/issue`, {
+    method: "POST",
+    body: { insuredParentId },
   });
+  export const getPediatricians = () => api("/insurance-records/pediatricians");
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.err || "Failed to download insurance card PDF.");
-  }
-
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  window.open(url, "_blank");
-};
+export const assignPediatrician = (recordId, pediatricianId) =>
+  api(`/insurance-records/${recordId}/pediatrician`, {
+    method: "POST",
+    body: { pediatricianId },
+  });

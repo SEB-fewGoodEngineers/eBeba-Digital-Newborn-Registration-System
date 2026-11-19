@@ -70,31 +70,32 @@ router.get(
 
 // ZAŠTITA ZA OSTALE CSW RUTE (Samo CSW službenici)
 
+// LIST THE CASES OF MY CENTER (newest first)
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    // console.log("Fetching CSW cases for CSW ID:", req.user.institutionId);
     const cases = await CswCase.find({
       cswInstitutionId: req.user.institutionId,
     })
       .sort({ createdAt: -1 })
-      .populate("babyId");
-      console.log(cases)
+      .populate(
+        "babyId",
+        "firstName lastName jmbg gender birthDateTime placeOfBirth residentialAddress mother father",
+      );
     res.status(200).json(cases);
   }),
 );
 
+// OPEN ONE CASE OF MY CENTER
 router.get(
   "/:caseId",
   asyncHandler(async (req, res) => {
-    const cswCase = await CswCase.findOne({
-      _id: req.params.caseId,
-      cswId: req.user.institutionId,
-    }).populate("babyId");
-
-    if (!cswCase) {
-      return res.status(404).json({ err: "CSW case not found." });
-    }
+    const cswCase = await findMyCase(req, res);
+    if (!cswCase) return;
+    await cswCase.populate(
+      "babyId",
+      "firstName lastName jmbg gender birthDateTime placeOfBirth residentialAddress mother father",
+    );
     res.status(200).json(cswCase);
   }),
 );
