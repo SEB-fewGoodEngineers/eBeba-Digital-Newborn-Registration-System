@@ -24,6 +24,7 @@ import {
   Typography,
 } from "@mui/material";
 import { LineChart } from "@mui/x-charts/LineChart";
+import { useUser } from "../../contexts/UserContext";
 import {
   createDiaryEntry,
   createGrowthMeasurement,
@@ -133,8 +134,18 @@ const formatEntryDetails = (entry) => {
   return "";
 };
 
+const isEntryOwner = (entry, user) => {
+  if (!user || !entry?.loggedByUserId) return false;
+  const ownerId =
+    typeof entry.loggedByUserId === "object"
+      ? entry.loggedByUserId._id
+      : entry.loggedByUserId;
+  return String(ownerId) === String(user._id);
+};
+
 export default function CarePage() {
   const { babyId } = useParams();
+  const { user } = useUser();
 
   // Diary state
   const [entries, setEntries] = useState([]);
@@ -607,6 +618,7 @@ export default function CarePage() {
                 detailText,
                 entry.notes,
               ].filter(Boolean);
+              const canDelete = isEntryOwner(entry, user);
 
               return (
                 <ListItem
@@ -614,13 +626,15 @@ export default function CarePage() {
                   divider
                   disableGutters
                   secondaryAction={
-                    <IconButton
-                      edge="end"
-                      aria-label="delete"
-                      onClick={() => setDeleteTargetId(entry._id)}
-                    >
-                      ✕
-                    </IconButton>
+                    canDelete ? (
+                      <IconButton
+                        edge="end"
+                        aria-label="delete"
+                        onClick={() => setDeleteTargetId(entry._id)}
+                      >
+                        ✕
+                      </IconButton>
+                    ) : null
                   }
                 >
                   <ListItemText

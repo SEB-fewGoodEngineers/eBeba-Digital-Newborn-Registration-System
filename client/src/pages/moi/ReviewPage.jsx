@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   CardContent,
+  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -13,6 +14,7 @@ import {
   DialogContentText,
   DialogTitle,
   Divider,
+  FormControlLabel,
   Grid,
   Stack,
   TextField,
@@ -32,6 +34,13 @@ import {
   signCertificate,
 } from "../../services/registrationService";
 import { runPrecheck, decideFlag } from "../../services/aiSuggestionService";
+import {
+  hasSigningKey,
+  registerSigningKey,
+  signApprovalPayload,
+} from "../../services/signingKey";
+import { api } from "../../services/api";
+import { useUser } from "../../contexts/UserContext";
 import { formatDateTime } from "../../utils/dates";
 
 const orDash = (v) => (v === undefined || v === null || v === "" ? "—" : v);
@@ -72,17 +81,30 @@ function CompareRow({ label, proposed, record }) {
 
 export default function ReviewPage() {
   const { registrationId } = useParams();
+  const { user } = useUser();
 
   // loading | error | ready
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
 
-  // Approve
-  const [approveOpen, setApproveOpen] = useState(false);
+  // Approve result (JMBG, certificate number, certificate id)
+  const [approved, setApproved] = useState(null);
   const [isApproving, setIsApproving] = useState(false);
   const [approveError, setApproveError] = useState("");
-  const [approved, setApproved] = useState(null);
+
+  // Signing-key registration
+  const [signingKeyReady, setSigningKeyReady] = useState(null); // null | true | false
+  const [keyDialogOpen, setKeyDialogOpen] = useState(false);
+  const [keyPassphrase, setKeyPassphrase] = useState("");
+  const [keyConfirmPassphrase, setKeyConfirmPassphrase] = useState("");
+  const [keyError, setKeyError] = useState("");
+  const [keySubmitting, setKeySubmitting] = useState(false);
+
+  // Sign-approval dialog
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [approvePassphrase, setApprovePassphrase] = useState("");
+  const [approveConfirm, setApproveConfirm] = useState(false);
 
   // Return / Reject
   const [returnOpen, setReturnOpen] = useState(false);
@@ -98,13 +120,13 @@ export default function ReviewPage() {
   const [precheckError, setPrecheckError] = useState("");
   const [isDecidingFlag, setIsDecidingFlag] = useState(false);
 
-  // Sign certificate
+  // Sign certificate (PDF)
   const [certificateSigned, setCertificateSigned] = useState(false);
   const [signError, setSignError] = useState("");
   const [isSigning, setIsSigning] = useState(false);
 
-  // Fetch the review data. Reset of per-registration state is handled by
-  // <ReviewPage key={registrationId}> in App.jsx — this effect does only I/O.
+  // Fetch the review data. <ReviewPage key={registrationId}> in App.jsx
+  // remounts on id change, so state is fresh per registration.
   useEffect(() => {
     let ignore = false;
     getRegistrationReview(registrationId)
@@ -123,18 +145,82 @@ export default function ReviewPage() {
     };
   }, [registrationId]);
 
-  const handleConfirmApprove = async () => {
+  // Check if this browser holds an officer signing key.
+  useEffect(() => {
+    hasSigningKey()
+      .then(setSigningKeyReady)
+      .catch(() => setSigningKeyReady(false));
+  }, []);
+
+  const handleOpenKeyDialog = () => {
+    setKeyPassphrase("");
+    setKeyConfirmPassphrase("");
+    setKeyError("");
+    setKeyDialogOpen(true);
+  };
+
+  const handleSubmitKey = async () => {
+    if (keyPassphrase.length < 8) {
+      setKeyError("Passphrase must be at least 8 characters.");
+      return;
+    }
+    if (keyPassphrase !== keyConfirmPassphrase) {
+      setKeyError("Passphrases do not match.");
+      return;
+    }
+    setKeySubmitting(true);
+    setKeyError("");
+    try {
+      const publicJwk = await registerSigningKey(keyPassphrase);
+      await api("/users/me/signing-key", {
+        method: "POST",
+        body: { publicJwk },
+      });
+      setSigningKeyReady(true);
+      setKeyDialogOpen(false);
+    } catch (err) {
+      setKeyError(err.message);
+    } finally {
+      setKeySubmitting(false);
+    }
+  };
+
+  const handleOpenApprove = () => {
+    setApprovePassphrase("");
+    setApproveConfirm(false);
+    setApproveError("");
+    setApproveDialogOpen(true);
+  };
+
+  const handleSignAndApprove = async () => {
+    if (!approveConfirm) {
+      setApproveError("Please check the confirmation box.");
+      return;
+    }
     setApproveError("");
     setIsApproving(true);
     try {
-      const result = await approveRegistrationApi(registrationId);
+      const payload = {
+        registrationId,
+        decision: "approve",
+        officerId: String(user._id),
+        issuedAt: new Date().toISOString(),
+      };
+      const { signature, payload: signedPayload } = await signApprovalPayload(
+        approvePassphrase,
+        payload,
+      );
+      const result = await approveRegistrationApi(registrationId, {
+        signature,
+        payload: signedPayload,
+      });
       setApproved(result);
       setData((d) =>
         d
           ? { ...d, registration: { ...d.registration, status: "approved" } }
           : d,
       );
-      setApproveOpen(false);
+      setApproveDialogOpen(false);
     } catch (err) {
       setApproveError(err.message);
     } finally {
@@ -298,12 +384,18 @@ export default function ReviewPage() {
               variant="contained"
               color="success"
               onClick={() => {
-                setApproveError("");
-                setApproveOpen(true);
+                if (signingKeyReady === true) {
+                  handleOpenApprove();
+                } else {
+                  handleOpenKeyDialog();
+                }
               }}
+              disabled={signingKeyReady === null}
               type="button"
             >
-              Approve
+              {signingKeyReady === false
+                ? "Register signing key to approve"
+                : "Approve"}
             </Button>
           </Stack>
         )}
@@ -427,8 +519,9 @@ export default function ReviewPage() {
                 {baby.gender === "M" ? "Male" : "Female"}
               </Typography>
               <Typography variant="body2">
-                <strong>Weight / length:</strong> {orDash(baby.birthWeightGrams)}{" "}
-                g / {orDash(baby.birthLengthCm)} cm
+                <strong>Weight / length:</strong>{" "}
+                {orDash(baby.birthWeightGrams)} g / {orDash(baby.birthLengthCm)}{" "}
+                cm
               </Typography>
               <Typography variant="body2">
                 <strong>Family type:</strong> {baby.familyType}
@@ -529,19 +622,116 @@ export default function ReviewPage() {
         </CardContent>
       </Card>
 
+      {/* ── Register signing key dialog ─────────────────────────────── */}
       <Dialog
-        open={approveOpen}
-        onClose={() => !isApproving && setApproveOpen(false)}
-        aria-labelledby="approve-dialog-title"
+        open={keyDialogOpen}
+        onClose={keySubmitting ? undefined : () => setKeyDialogOpen(false)}
+        aria-labelledby="key-dialog-title"
+        fullWidth
+        maxWidth="sm"
       >
-        <DialogTitle id="approve-dialog-title">
-          Approve this application?
+        <DialogTitle id="key-dialog-title">
+          Register your signing key
         </DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            This will assign a JMBG to the baby and start the CSW and FZO
-            process. It cannot be undone.
+          <DialogContentText sx={{ mb: 2 }}>
+            This key is created in this browser and stored only on this device.
+            It is wrapped with a key derived from your passphrase (PBKDF2). The
+            passphrase never leaves this device. You will enter it each time
+            you approve an application.
           </DialogContentText>
+          <TextField
+            label="Passphrase"
+            type="password"
+            value={keyPassphrase}
+            onChange={(e) => setKeyPassphrase(e.target.value)}
+            fullWidth
+            required
+            autoFocus
+            sx={{ mb: 2 }}
+            error={Boolean(keyError) && keyPassphrase.length < 8}
+            helperText="At least 8 characters."
+          />
+          <TextField
+            label="Confirm passphrase"
+            type="password"
+            value={keyConfirmPassphrase}
+            onChange={(e) => setKeyConfirmPassphrase(e.target.value)}
+            fullWidth
+            required
+            error={
+              Boolean(keyConfirmPassphrase) &&
+              keyPassphrase !== keyConfirmPassphrase
+            }
+            helperText={
+              keyConfirmPassphrase && keyPassphrase !== keyConfirmPassphrase
+                ? "Passphrases do not match."
+                : " "
+            }
+          />
+          {keyError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {keyError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setKeyDialogOpen(false)}
+            disabled={keySubmitting}
+            type="button"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmitKey}
+            disabled={keySubmitting}
+            type="button"
+          >
+            {keySubmitting ? "Registering…" : "Register key"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Sign-approval dialog ────────────────────────────────────── */}
+      <Dialog
+        open={approveDialogOpen}
+        onClose={
+          isApproving ? undefined : () => setApproveDialogOpen(false)
+        }
+        aria-labelledby="sign-approve-title"
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle id="sign-approve-title">
+          Sign this approval
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Enter your passphrase to sign the approval with your key. The
+            signature is verified on the server and stored in the audit log.
+            This action is final.
+          </DialogContentText>
+          <TextField
+            label="Passphrase"
+            type="password"
+            value={approvePassphrase}
+            onChange={(e) => setApprovePassphrase(e.target.value)}
+            fullWidth
+            required
+            autoFocus
+            sx={{ mb: 2 }}
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={approveConfirm}
+                onChange={(e) => setApproveConfirm(e.target.checked)}
+              />
+            }
+            label="I confirm I have reviewed this application and I approve it."
+          />
           {approveError && (
             <Alert severity="error" sx={{ mt: 2 }}>
               {approveError}
@@ -550,7 +740,7 @@ export default function ReviewPage() {
         </DialogContent>
         <DialogActions>
           <Button
-            onClick={() => setApproveOpen(false)}
+            onClick={() => setApproveDialogOpen(false)}
             disabled={isApproving}
             type="button"
           >
@@ -559,15 +749,16 @@ export default function ReviewPage() {
           <Button
             variant="contained"
             color="success"
-            onClick={handleConfirmApprove}
+            onClick={handleSignAndApprove}
             disabled={isApproving}
             type="button"
           >
-            {isApproving ? "Approving…" : "Approve"}
+            {isApproving ? "Signing…" : "Sign and approve"}
           </Button>
         </DialogActions>
       </Dialog>
 
+      {/* ── Return dialog ───────────────────────────────────────────── */}
       <Dialog
         open={returnOpen}
         onClose={() => !isSubmittingDecision && setReturnOpen(false)}
@@ -616,6 +807,7 @@ export default function ReviewPage() {
         </DialogActions>
       </Dialog>
 
+      {/* ── Reject dialog ───────────────────────────────────────────── */}
       <Dialog
         open={rejectOpen}
         onClose={() => !isSubmittingDecision && setRejectOpen(false)}

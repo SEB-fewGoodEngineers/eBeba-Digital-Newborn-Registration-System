@@ -11,7 +11,9 @@ const Baby = require("../../models/Baby");
 const audit = require("../audit");
 
 // The pfx path and password are env-only. Never logged, never sent.
-const PFX_PATH = process.env.PDF_SIGNER_PFX_PATH;
+const PFX_PATH = process.env.PDF_SIGNER_PFX_PATH
+  ? path.resolve(__dirname, "../../..", process.env.PDF_SIGNER_PFX_PATH)
+  : null;
 const PFX_PASSWORD = process.env.PDF_SIGNER_PFX_PASSWORD;
 
 /**
@@ -38,13 +40,18 @@ const renderCertificatePdf = async (certificate, baby) => {
   };
 
   line("eBeba — Demo Birth Certificate", { size: 18, bold: true, gap: 40 });
-  line("This document is a DEMO. It has no legal effect.", { size: 10, gap: 30 });
+  line("This document is a DEMO. It has no legal effect.", {
+    size: 10,
+    gap: 30,
+  });
 
   line("Child", { bold: true, size: 13 });
   line(`First name: ${baby.firstName || "—"}`);
   line(`Last name: ${baby.lastName || "—"}`);
   line(`JMBG (DEMO): ${baby.jmbg || "—"}`);
-  line(`Date of birth: ${baby.birthDateTime?.toISOString().slice(0, 10) || "—"}`);
+  line(
+    `Date of birth: ${baby.birthDateTime?.toISOString().slice(0, 10) || "—"}`,
+  );
   line(`Place of birth: ${baby.placeOfBirth || "—"}`, { gap: 30 });
 
   line("Certificate", { bold: true, size: 13 });
@@ -95,14 +102,19 @@ const signCertificate = async (certificateId, user) => {
   if (!baby) throw new Error("Baby not found for this certificate.");
 
   if (!PFX_PATH || !PFX_PASSWORD) {
-    throw new Error("Signing key is not configured (PDF_SIGNER_* env missing).");
+    throw new Error(
+      "Signing key is not configured (PDF_SIGNER_* env missing).",
+    );
   }
   if (!fs.existsSync(PFX_PATH)) {
     throw new Error(`Signing key not found at ${PFX_PATH}.`);
   }
 
   // 1. Render the unsigned PDF.
-  const { pdfDoc, signatureBox } = await renderCertificatePdf(certificate, baby);
+  const { pdfDoc, signatureBox } = await renderCertificatePdf(
+    certificate,
+    baby,
+  );
 
   // 2. Add the signature placeholder. This is what @signpdf fills.
   pdflibAddPlaceholder({
