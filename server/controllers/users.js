@@ -1,7 +1,11 @@
 const express = require("express");
+const User = require("../models/User");
 const { verifyToken, requireRole } = require("../middleware/auth");
 const { ROLES } = require("../constants");
 const asyncHandler = require("../middleware/asyncHandler");
+const validate = require("../middleware/validate");
+const audit = require("../services/audit");
+const { signingKeySchema } = require("../validators/users");
 const router = express.Router();
 
 // GET MY PROFILE
@@ -17,17 +21,10 @@ router.post(
   "/me/signing-key",
   verifyToken,
   requireRole(ROLES.MOI_STAFF),
+  validate(signingKeySchema),
   asyncHandler(async (req, res) => {
-    const { publicJwk } = req.body || {};
-    if (
-      !publicJwk ||
-      publicJwk.kty !== "RSA" ||
-      (publicJwk.alg !== "RSA-OAEP-256" && publicJwk.alg !== undefined) ||
-      !publicJwk.n ||
-      !publicJwk.e
-    ) {
-      return res.status(400).json({ err: "Invalid public key." });
-    }
+    // Already reduced to { kty, n, e, alg } by the schema
+    const { publicJwk } = req.body;
     const user = await User.findByIdAndUpdate(
       req.user._id,
       {

@@ -1,6 +1,7 @@
 const DB_NAME = "ebeba-signing";
 const STORE = "keys";
-const KEY_ID = "officer-signing-key";
+// One key per officer, so two officers sharing a browser never use each other's key
+const keyId = (userId) => `officer-signing-key:${userId}`;
 
 const openDB = () =>
   new Promise((resolve, reject) => {
@@ -65,7 +66,7 @@ const deriveWrappingKey = async (passphrase, salt) => {
  * wraps the private key with the passphrase, stores it in IndexedDB.
  * @returns {Promise<object>} the public JWK (to send to the server)
  */
-export const registerSigningKey = async (passphrase) => {
+export const registerSigningKey = async (userId, passphrase) => {
   const signingKeyPair = await crypto.subtle.generateKey(
     {
       name: "RSASSA-PKCS1-v1_5",
@@ -94,7 +95,7 @@ export const registerSigningKey = async (passphrase) => {
     pkcs8,
   );
 
-  await idbPut(KEY_ID, {
+  await idbPut(keyId(userId), {
     publicJwk,
     wrapped: {
       salt: Array.from(salt),
@@ -110,8 +111,8 @@ export const registerSigningKey = async (passphrase) => {
  * Sign the canonical approval payload with the officer's private key.
  * Throws if no key is registered or the passphrase is wrong.
  */
-export const signApprovalPayload = async (passphrase, payload) => {
-  const stored = await idbGet(KEY_ID);
+export const signApprovalPayload = async (userId, passphrase, payload) => {
+  const stored = await idbGet(keyId(userId));
   if (!stored)
     throw new Error("No signing key on this device. Register one first.");
 
@@ -161,14 +162,31 @@ export const signApprovalPayload = async (passphrase, payload) => {
   };
 };
 
-export const hasSigningKey = async () => Boolean(await idbGet(KEY_ID));
+export const hasSigningKey = async (userId) =>
+  Boolean(await idbGet(keyId(userId)));
 
-export const clearSigningKey = () =>
+/**
+ * True only if this browser holds the key the server has on file for the
+ * officer. False when the officer re-registered on another device (the
+ * server key was replaced), so the page asks to register again instead of
+ * failing later with "Invalid signature".
+ */
+export const localKeyMatches = async (userId, serverJwk) => {
+  if (!serverJwk) return false;
+  const stored = await idbGet(keyId(userId));
+  return Boolean(
+    stored &&
+      stored.publicJwk.n === serverJwk.n &&
+      stored.publicJwk.e === serverJwk.e,
+  );
+};
+
+export const clearSigningKey = (userId) =>
   new Promise((resolve, reject) => {
     openDB()
       .then((db) => {
         const tx = db.transaction(STORE, "readwrite");
-        const r = tx.objectStore(STORE).delete(KEY_ID);
+        const r = tx.objectStore(STORE).delete(keyId(userId));
         r.onsuccess = () => resolve();
         r.onerror = () => reject(r.error);
       })

@@ -4,6 +4,8 @@ import {
   Alert,
   Box,
   Button,
+  Card,
+  CardContent,
   Paper,
   Stack,
   TextField,
@@ -11,6 +13,7 @@ import {
 } from "@mui/material";
 
 import { linkBaby } from "../../services/babyService";
+import { formatDateTime } from "../../utils/dates";
 
 export default function LinkBabyPage() {
   const [birthRecordNumber, setBirthRecordNumber] = useState("");
@@ -47,9 +50,53 @@ export default function LinkBabyPage() {
                 Your baby has been linked successfully.
               </Alert>
 
-              <Typography>
-                Birth record number: {linkedBaby.birthRecordNumber}
-              </Typography>
+              <Card variant="outlined">
+                <CardContent>
+                  <Stack spacing={1}>
+                    <Typography variant="h6" component="h2">
+                      {linkedBaby.firstName || "Baby"} {linkedBaby.lastName || ""}
+                    </Typography>
+
+                    <Typography>
+                      Birth record number: {linkedBaby.birthRecordNumber}
+                    </Typography>
+
+                    <Typography>
+                      Born: {formatDateTime(linkedBaby.birthDateTime)}
+                    </Typography>
+
+                    <Typography>
+                      Gender: {linkedBaby.gender === "M" ? "Male" : "Female"}
+                    </Typography>
+
+                    <Typography>Place: {linkedBaby.placeOfBirth}</Typography>
+
+                    <Typography>
+                      Municipality: {linkedBaby.municipalityOfBirth}
+                    </Typography>
+
+                    <Typography>
+                      Mother: {linkedBaby.mother?.firstName}{" "}
+                      {linkedBaby.mother?.lastName}
+                    </Typography>
+
+                    {linkedBaby.father?.firstName && (
+                      <Typography>
+                        Father: {linkedBaby.father.firstName}{" "}
+                        {linkedBaby.father.lastName}
+                      </Typography>
+                    )}
+
+                    <Typography>
+                      Weight: {linkedBaby.birthWeightGrams ?? "N/A"} g
+                    </Typography>
+
+                    <Typography>
+                      Length: {linkedBaby.birthLengthCm ?? "N/A"} cm
+                    </Typography>
+                  </Stack>
+                </CardContent>
+              </Card>
 
               <Button component={Link} to="/babies/mine" variant="contained">
                 View my babies

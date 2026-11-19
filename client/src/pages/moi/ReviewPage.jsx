@@ -35,7 +35,7 @@ import {
 } from "../../services/registrationService";
 import { runPrecheck, decideFlag } from "../../services/aiSuggestionService";
 import {
-  hasSigningKey,
+  localKeyMatches,
   registerSigningKey,
   signApprovalPayload,
 } from "../../services/signingKey";
@@ -81,7 +81,7 @@ function CompareRow({ label, proposed, record }) {
 
 export default function ReviewPage() {
   const { registrationId } = useParams();
-  const { user } = useUser();
+  const { user, setUser } = useUser();
 
   // loading | error | ready
   const [status, setStatus] = useState("loading");
@@ -145,12 +145,12 @@ export default function ReviewPage() {
     };
   }, [registrationId]);
 
-  // Check if this browser holds an officer signing key.
+  // Ready only if this browser holds the key the server has on file for this officer.
   useEffect(() => {
-    hasSigningKey()
+    localKeyMatches(user._id, user.signingPublicKey)
       .then(setSigningKeyReady)
       .catch(() => setSigningKeyReady(false));
-  }, []);
+  }, [user._id, user.signingPublicKey]);
 
   const handleOpenKeyDialog = () => {
     setKeyPassphrase("");
@@ -171,15 +171,16 @@ export default function ReviewPage() {
     setKeySubmitting(true);
     setKeyError("");
     try {
-      const publicJwk = await registerSigningKey(keyPassphrase);
+      const publicJwk = await registerSigningKey(user._id, keyPassphrase);
       await api("/users/me/signing-key", {
         method: "POST",
         body: { publicJwk },
       });
+      setUser({ ...user, signingPublicKey: publicJwk });
       setSigningKeyReady(true);
       setKeyDialogOpen(false);
     } catch (err) {
-      setKeyError(err.message);
+      setKeyError(err.details?.[0]?.message || err.message);
     } finally {
       setKeySubmitting(false);
     }
@@ -207,6 +208,7 @@ export default function ReviewPage() {
         issuedAt: new Date().toISOString(),
       };
       const { signature, payload: signedPayload } = await signApprovalPayload(
+        user._id,
         approvePassphrase,
         payload,
       );
