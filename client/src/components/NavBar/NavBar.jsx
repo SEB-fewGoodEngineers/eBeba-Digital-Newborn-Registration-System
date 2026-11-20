@@ -83,6 +83,29 @@ export default function NavBar() {
               Inbox
             </Button>
 
+            {/* EPIC 3 - CSW & FZO NAVIGATION LINKS */}
+            {user?.role === ROLES.CSW_STAFF && (
+              <Button
+                color="inherit"
+                component={RouterLink}
+                to="/csw-cases"
+                sx={{ display: { xs: "none", sm: "inline-flex" } }}
+              >
+                CSW Cases
+              </Button>
+            )}
+
+            {user?.role === ROLES.HEALTH_INSURANCE_STAFF && (
+              <Button
+                color="inherit"
+                component={RouterLink}
+                to="/insurance-records"
+                sx={{ display: { xs: "none", sm: "inline-flex" } }}
+              >
+                Insurance Records
+              </Button>
+            )}
+
             {/* A new key per user: no notifications from the last user stay visible */}
             <NotificationBell key={user._id} />
 
