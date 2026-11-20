@@ -26,7 +26,7 @@ const disconnectNotificationUser = (userId) => {
 // Save and deliver an approved notification.
 const notify = async (
   userId,
-  { type, title, message, link, babyId } = {},
+  { type, title, message, link, babyId, birthRecordNumber } = {},
 ) => {
   // Reject JMBG values before processing the notification.
   const inputText = [type, title, message, link]
@@ -41,8 +41,25 @@ const notify = async (
   // Never save caller-provided titles or message text.
   const template = getNotificationTemplate(type);
 
+  // Only the birth-record template may carry a record number.
+  if (birthRecordNumber !== undefined) {
+    if (
+      type !== "birth_record.created" ||
+      typeof birthRecordNumber !== "string" ||
+      !/^BR-[A-Za-z0-9-]{1,97}$/.test(birthRecordNumber)
+    ) {
+      throw new Error("Invalid birth record number for notification.");
+    }
+  }
+  if (type === "birth_record.created" && !birthRecordNumber) {
+    throw new Error("Birth record number is required.");
+  }
+
   // Only approved navigation destinations may be included.
-  if (link !== undefined && link !== "/dashboard") {
+  const allowedLink =
+    link === "/dashboard" ||
+    (type === "birth_record.created" && link === "/babies/link");
+  if (link !== undefined && !allowedLink) {
     throw new Error("Notification link is not allowed.");
   }
 
@@ -53,6 +70,7 @@ const notify = async (
     message: template.message,
     ...(link ? { link } : {}),
     ...(babyId ? { babyId } : {}),
+    ...(birthRecordNumber ? { birthRecordNumber } : {}),
   });
 
   // Deliver only the saved, approved notification fields.
@@ -65,6 +83,7 @@ const notify = async (
         message: notification.message,
         link: notification.link,
         babyId: notification.babyId,
+        birthRecordNumber: notification.birthRecordNumber,
         createdAt: notification.createdAt,
         readAt: notification.readAt,
       });

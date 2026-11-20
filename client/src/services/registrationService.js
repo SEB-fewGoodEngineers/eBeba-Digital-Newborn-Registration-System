@@ -21,8 +21,8 @@ export const getRegistrationReview = (registrationId) =>
 
 // MoI staff: approve an application. Returns { jmbg, certificateNumber, … }.
 // Idempotent on the server: second call returns 409.
-export const approveRegistration = (registrationId) =>
-  api(`/registrations/${registrationId}/approve`, { method: "POST" });
+export const approveRegistration = (registrationId, body) =>
+  api(`/registrations/${registrationId}/approve`, { method: "POST", body });
 
 // MoI staff: return the application for correction. Body: { reviewerNotes }.
 export const returnRegistration = (registrationId, reviewerNotes) =>

@@ -15,6 +15,8 @@ import {
 import DemoBadge from "../../components/DemoBadge/DemoBadge";
 import StatusBadge from "../../components/StatusBadge/StatusBadge";
 import { getDashboard } from "../../services/dashboardService";
+import { getRegistrationByBaby } from "../../services/registrationService";
+import { downloadCertificate } from "../../services/certificateService";
 import { subscribeToNotifications } from "../../services/socket";
 import { formatDateTime } from "../../utils/dates";
 import CardDownloads from "../../components/CardDownloads/CardDownloads";
@@ -23,6 +25,9 @@ export default function DashboardPage() {
   const [babies, setBabies] = useState([]);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
+
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [downloadError, setDownloadError] = useState({});
 
   useEffect(() => {
     let ignore = false;
@@ -57,6 +62,37 @@ export default function DashboardPage() {
     };
   }, []);
 
+  async function handleDownloadCertificate(babyId) {
+    setDownloadingId(babyId);
+
+    setDownloadError((prev) => ({
+      ...prev,
+      [babyId]: "",
+    }));
+
+    try {
+      const registration = await getRegistrationByBaby(babyId);
+
+      const certificate = registration?.certificate;
+
+      if (!certificate?.id || !certificate.pdfGenerated) {
+        throw new Error(
+          "The certificate has not been signed or generated yet. " +
+            "Please contact the MoI officer.",
+        );
+      }
+
+      await downloadCertificate(certificate.id);
+    } catch (err) {
+      setDownloadError((prev) => ({
+        ...prev,
+        [babyId]: err.message || "Could not download certificate.",
+      }));
+    } finally {
+      setDownloadingId(null);
+    }
+  }
+
   if (status === "loading") {
     return (
       <Box sx={{ p: 3 }}>
@@ -85,6 +121,7 @@ export default function DashboardPage() {
             <Typography>
               No babies linked to your account yet.
             </Typography>
+
             <Button
               component={RouterLink}
               to="/babies/link"
@@ -132,8 +169,13 @@ export default function DashboardPage() {
                   </Typography>
 
                   {baby.jmbg && (
-                    <Stack direction="row" alignItems="center">
-                      <Typography>JMBG: {baby.jmbg}</Typography>
+                    <Stack
+                      direction="row"
+                      sx={{ alignItems: "center" }}
+                    >
+                      <Typography>
+                        JMBG: {baby.jmbg}
+                      </Typography>
                       <DemoBadge />
                     </Stack>
                   )}
@@ -146,20 +188,24 @@ export default function DashboardPage() {
                     <Stack
                       direction="row"
                       spacing={2}
-                      alignItems="center"
+                      sx={{ alignItems: "center" }}
                     >
                       <Typography>MoI:</Typography>
 
                       {baby.registrationStatus ? (
-                        <StatusBadge status={baby.registrationStatus} />
+                        <StatusBadge
+                          status={baby.registrationStatus}
+                        />
                       ) : (
-                        <Typography>Not submitted</Typography>
+                        <Typography>
+                          Not submitted
+                        </Typography>
                       )}
                     </Stack>
 
-                    {/* RETURNED APPLICATION - PARENT ACTION */}
+                    {/* Returned application correction */}
                     {baby.registrationStatus === "returned" && (
-                      <Alert severity="warning" sx={{ mt: 2 }}>
+                      <Alert severity="warning">
                         <Stack spacing={2}>
                           <Typography variant="subtitle1">
                             Action required - Application returned
@@ -168,18 +214,18 @@ export default function DashboardPage() {
                           <Typography variant="body2">
                             The MoI officer has returned your
                             application for correction. Please review
-                            the officer's comments, correct your
+                            the officer&apos;s comments, correct your
                             application, and submit it again.
                           </Typography>
 
                           <Button
                             component={RouterLink}
-                            to="/registration/apply"
+                            to={`/registration/apply?babyId=${baby._id}`}
                             variant="contained"
                             color="warning"
                             sx={{ alignSelf: "flex-start" }}
                           >
-                            View Feedback & Correct Application
+                            View Feedback &amp; Correct Application
                           </Button>
                         </Stack>
                       </Alert>
@@ -188,7 +234,7 @@ export default function DashboardPage() {
                     <Stack
                       direction="row"
                       spacing={2}
-                      alignItems="center"
+                      sx={{ alignItems: "center" }}
                     >
                       <Typography>CSW:</Typography>
                       <StatusBadge status={baby.cswStatus} />
@@ -197,10 +243,12 @@ export default function DashboardPage() {
                     <Stack
                       direction="row"
                       spacing={2}
-                      alignItems="center"
+                      sx={{ alignItems: "center" }}
                     >
                       <Typography>FZO:</Typography>
-                      <StatusBadge status={baby.insuranceStatus} />
+                      <StatusBadge
+                        status={baby.insuranceStatus}
+                      />
                     </Stack>
                   </Stack>
 
@@ -212,6 +260,53 @@ export default function DashboardPage() {
                   </Typography>
                   <CardDownloads baby={baby} />
            
+
+                  {/* Download approved certificate */}
+                  {baby.isRegistrationApproved && (
+                    <Stack
+                      spacing={1}
+                      sx={{ alignItems: "flex-start" }}
+                    >
+                      <Button
+                        variant="contained"
+                        color="success"
+                        disabled={downloadingId === baby._id}
+                        onClick={() =>
+                          handleDownloadCertificate(baby._id)
+                        }
+                        startIcon={
+                          downloadingId === baby._id ? (
+                            <CircularProgress
+                              size={18}
+                              color="inherit"
+                            />
+                          ) : null
+                        }
+                      >
+                        {downloadingId === baby._id
+                          ? "Downloading..."
+                          : "Download certificate (PDF)"}
+                      </Button>
+
+                      {downloadError[baby._id] && (
+                        <Alert
+                          severity="warning"
+                          sx={{ width: "100%" }}
+                        >
+                          {downloadError[baby._id]}
+                        </Alert>
+                      )}
+
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                      >
+                        Available after the certificate is signed
+                        and generated by the MoI officer.
+                      </Typography>
+                    </Stack>
+                  )}
+
                   <Stack
                     direction={{ xs: "column", sm: "row" }}
                     spacing={2}

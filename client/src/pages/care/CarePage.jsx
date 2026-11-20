@@ -24,6 +24,7 @@ import {
   Typography,
 } from "@mui/material";
 import { LineChart } from "@mui/x-charts/LineChart";
+import { useUser } from "../../contexts/UserContext";
 import {
   createDiaryEntry,
   createGrowthMeasurement,
@@ -133,8 +134,18 @@ const formatEntryDetails = (entry) => {
   return "";
 };
 
+const isEntryOwner = (entry, user) => {
+  if (!user || !entry?.loggedByUserId) return false;
+  const ownerId =
+    typeof entry.loggedByUserId === "object"
+      ? entry.loggedByUserId._id
+      : entry.loggedByUserId;
+  return String(ownerId) === String(user._id);
+};
+
 export default function CarePage() {
   const { babyId } = useParams();
+  const { user } = useUser();
 
   // Diary state
   const [entries, setEntries] = useState([]);
@@ -167,7 +178,9 @@ export default function CarePage() {
   const [milestones, setMilestones] = useState([]);
   const [milestoneStatus, setMilestoneStatus] = useState("loading");
   const [milestoneLoadError, setMilestoneLoadError] = useState("");
-  const [milestoneForm, setMilestoneForm] = useState(createInitialMilestoneForm);
+  const [milestoneForm, setMilestoneForm] = useState(
+    createInitialMilestoneForm,
+  );
   const [milestoneFormError, setMilestoneFormError] = useState("");
   const [milestoneFieldErrors, setMilestoneFieldErrors] = useState({});
   const [isSavingMilestone, setIsSavingMilestone] = useState(false);
@@ -560,10 +573,12 @@ export default function CarePage() {
         {/* Story 5.6: Date picker and dynamic header */}
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "stretch", sm: "center" }}
           spacing={2}
-          sx={{ mb: 2 }}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: { xs: "stretch", sm: "center" },
+            mb: 2,
+          }}
         >
           <Typography variant="h6" component="h3">
             {isToday
@@ -607,6 +622,7 @@ export default function CarePage() {
                 detailText,
                 entry.notes,
               ].filter(Boolean);
+              const canDelete = isEntryOwner(entry, user);
 
               return (
                 <ListItem
@@ -614,18 +630,20 @@ export default function CarePage() {
                   divider
                   disableGutters
                   secondaryAction={
-                    <IconButton
-                      edge="end"
-                      aria-label="delete"
-                      onClick={() => setDeleteTargetId(entry._id)}
-                    >
-                      ✕
-                    </IconButton>
+                    canDelete ? (
+                      <IconButton
+                        edge="end"
+                        aria-label="delete"
+                        onClick={() => setDeleteTargetId(entry._id)}
+                      >
+                        ✕
+                      </IconButton>
+                    ) : null
                   }
                 >
                   <ListItemText
                     primary={
-                      <Stack direction="row" spacing={1} alignItems="center">
+                      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                         <Chip
                           label={
                             CATEGORY_LABELS[entry.category] || entry.category
@@ -892,9 +910,7 @@ export default function CarePage() {
               value={milestoneForm.notes}
               onChange={handleMilestoneChange}
               error={Boolean(milestoneFieldErrors.notes)}
-              helperText={
-                milestoneFormError || "Optional (max 500 characters)"
-              }
+              helperText={milestoneFormError || "Optional (max 500 characters)"}
               slotProps={{ htmlInput: { maxLength: 500 } }}
               multiline
               minRows={2}
@@ -940,7 +956,7 @@ export default function CarePage() {
                 <ListItem key={item._id} divider disableGutters>
                   <ListItemText
                     primary={
-                      <Stack direction="row" spacing={1} alignItems="center">
+                      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                         <Chip
                           label={
                             MILESTONE_CATEGORY_LABELS[item.category] ||
