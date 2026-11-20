@@ -19,6 +19,7 @@ import { getRegistrationByBaby } from "../../services/registrationService";
 import { downloadCertificate } from "../../services/certificateService";
 import { subscribeToNotifications } from "../../services/socket";
 import { formatDateTime } from "../../utils/dates";
+import CardDownloads from "../../components/CardDownloads/CardDownloads";
 
 export default function DashboardPage() {
   const [babies, setBabies] = useState([]);
@@ -257,6 +258,8 @@ export default function DashboardPage() {
                       ? `${baby.pediatrician.firstName} ${baby.pediatrician.lastName}`
                       : "Not assigned yet"}
                   </Typography>
+                  <CardDownloads baby={baby} />
+           
 
                   {/* Download approved certificate */}
                   {baby.isRegistrationApproved && (
