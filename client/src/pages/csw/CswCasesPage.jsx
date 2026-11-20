@@ -131,6 +131,7 @@ export default function CswCasesPage() {
                       onClick={() => handleSelectCase(c)}
                     >
                       <ListItemText
+                        slotProps={{ secondary: { component: "div" } }}
                         primary={
                           <Typography variant="subtitle1" component="div">
                             {baby.firstName || "Proposed Name"}{" "}

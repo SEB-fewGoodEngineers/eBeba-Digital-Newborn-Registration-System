@@ -11,6 +11,7 @@ import ArrowForward from "@mui/icons-material/ArrowForward";
 const guides = {
   "/for-parents": {
     title: "For parents",
+    summary: "Link your baby, submit an application and download available documents.",
     heading: "Register your baby’s birth",
     introduction: "Once the hospital records the birth, you can apply for registration and follow your baby’s documents from your parent dashboard.",
     icon: ChildCareOutlined,
@@ -24,6 +25,7 @@ const guides = {
   },
   "/for-hospitals": {
     title: "For hospitals",
+    summary: "Record a birth and give families the details they need to apply.",
     heading: "Record a newborn’s birth",
     introduction: "Hospital staff create the birth record that a parent uses to start registration. Begin with the details recorded at delivery.",
     icon: LocalHospitalOutlined,
@@ -34,6 +36,34 @@ const guides = {
     ],
     note: "Staff access", detail: "Use an account assigned to your hospital. If you need access, contact your project administrator.",
     action: "Hospital staff sign in", to: "/sign-in",
+  },
+  "/for-fzo": {
+    title: "Health Insurance Fund (FZO)",
+    summary: "Follow approved registrations through health insurance processing and card issuance.",
+    heading: "Process a newborn’s health insurance",
+    introduction: "After the Ministry approves a registration, the Health Insurance Fund handles the newborn’s insurance record.",
+    icon: AssignmentOutlined,
+    steps: [
+      ["Sign in with your FZO account", "Use your assigned staff account to open the insurance workspace."],
+      ["Review the insurance record", "Find the newborn’s record and check the registration details and current insurance status."],
+      ["Follow card issuance", "Complete the insurance steps for the record. Parents can see their baby’s insurance status on the dashboard."],
+    ],
+    note: "Waiting for approval", detail: "If the record shows “Waiting for MoI”, the Ministry still needs to approve the birth registration.",
+    action: "FZO staff sign in", to: "/sign-in",
+  },
+  "/for-ministry": {
+    title: "Ministry of Interior (MoI)",
+    summary: "Review applications, request corrections and issue signed birth certificates.",
+    heading: "Review a birth registration",
+    introduction: "Ministry officers review the family’s application and the hospital birth record before issuing a birth certificate.",
+    icon: AccountBalanceOutlined,
+    steps: [
+      ["Open the review queue", "Sign in with your Ministry account and select a pending registration."],
+      ["Check the application", "Review the newborn and parent details. If information needs correcting, return the application with a comment explaining the change."],
+      ["Approve and sign", "Approve the completed registration and sign the certificate. The parent can download it once it is available on their dashboard."],
+    ],
+    note: "Previously approved applications", detail: "Open an approved registration to view its existing certificate.",
+    action: "Ministry staff sign in", to: "/sign-in",
   },
 };
 const benefits = [
@@ -58,7 +88,7 @@ export default function LandingPage() {
         <Link className="eb-brand" to="/" aria-label="eBeba home"><ChildCareOutlined /> eBeba</Link>
         <span className="eb-tag">Digital newborn<br />registration</span>
         <nav aria-label="Public navigation">
-          {Object.entries({ "/": "Home", "/for-parents": "For parents", "/for-hospitals": "For hospitals", "/#faq": "FAQs", "/#about": "About eBeba" }).map(([url, label]) =>
+          {Object.entries({ "/": "Home", "/for-parents": "For parents", "/for-hospitals": "For hospitals", "/for-fzo": "FZO", "/for-ministry": "Ministry", "/#faq": "FAQs", "/#about": "About eBeba" }).map(([url, label]) =>
             <Link key={url} to={url} aria-current={page + hash === url ? "page" : undefined}>{label}</Link>)}
         </nav>
         <div className="eb-actions"><Link className="eb-btn outline" to="/sign-up">Create account</Link><Link className="eb-btn" to="/sign-in">Sign in</Link></div>
@@ -87,7 +117,7 @@ export default function LandingPage() {
           <section id="access" className="eb-access"><h2>Choose how to access eBeba</h2>
             <div className="eb-cards">{Object.entries(guides).map(([url, item]) => {
               const Icon = item.icon;
-              return <article key={url}><Icon /><div><h3>{item.title}</h3><p>{url === "/for-parents" ? "Link your baby, submit an application and download available documents." : "Record a birth and give families the details they need to apply."}</p><Link className="eb-btn" to={url} aria-label={'Learn more: ' + item.title}>Learn more <ArrowForward /></Link></div></article>;
+              return <article key={url}><Icon /><div><h3>{item.title}</h3><p>{item.summary}</p><Link className="eb-btn" to={url} aria-label={'Learn more: ' + item.title}>Learn more <ArrowForward /></Link></div></article>;
             })}</div>
           </section>
           <section id="faq" className="eb-faq"><h2>Frequently asked questions</h2>
