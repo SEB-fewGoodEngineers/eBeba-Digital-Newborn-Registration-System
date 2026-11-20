@@ -2,6 +2,7 @@
 const express = require("express");
 const Baby = require("../models/Baby");
 const Registration = require("../models/Registration");
+const User = require("../models/User");
 const Institution = require("../models/Institution");
 
 const {
@@ -17,6 +18,7 @@ const {
 } = require("../validators/babies");
 const { generateNumber } = require("../services/workflow");
 const audit = require("../services/audit");
+const { notifyMany } = require("../services/notifications");
 const { ROLES, INSTITUTION_TYPES } = require("../constants");
 
 const router = express.Router();
@@ -56,6 +58,36 @@ router.post(
       targetDocumentId: baby._id,
       changes: { after: baby },
     });
+
+    // Send only to matching, existing, active parent accounts.
+    // Saving the birth record must succeed even if notifications fail.
+    try {
+      const emails = [baby.mother?.email, baby.father?.email]
+        .filter(Boolean)
+        .map((email) => email.trim().toLowerCase());
+
+      if (emails.length > 0) {
+        const parents = await User.find({
+          email: { $in: [...new Set(emails)] },
+          role: ROLES.PARENT,
+          isActive: true,
+        }).select("_id");
+
+        if (parents.length > 0) {
+          await notifyMany(
+            parents.map((parent) => parent._id),
+            {
+              type: "birth_record.created",
+              link: "/babies/link",
+              babyId: baby._id,
+              birthRecordNumber: baby.birthRecordNumber,
+            },
+          );
+        }
+      }
+    } catch {
+      console.error("Birth record notification failed.");
+    }
 
     res.status(201).json(baby);
   }),

@@ -19,3 +19,5 @@ ai-context/
 *.p12
 *.key
 server/certs/
+
+/server/.certs/

@@ -38,7 +38,7 @@ export default function HomePage() {
             direction={{ xs: "column", sm: "row" }}
             spacing={2}
             useFlexGap
-            flexWrap="wrap"
+            sx={{ flexWrap: "wrap" }}
           >
             <Button
               component={RouterLink}

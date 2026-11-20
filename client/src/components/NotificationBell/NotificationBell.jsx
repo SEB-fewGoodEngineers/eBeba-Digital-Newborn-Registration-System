@@ -160,6 +160,12 @@ export default function NotificationBell() {
             secondary={
               <>
                 {notification.message}
+                {notification.type === "birth_record.created" &&
+                  notification.birthRecordNumber && (
+                    <Box component="span" sx={{ display: "block", fontWeight: 700 }}>
+                      Record Number: {notification.birthRecordNumber}
+                    </Box>
+                  )}
                 <Box component="span" sx={{ display: "block", mt: 0.5 }}>
                   {formatDateTime(notification.createdAt)}
                 </Box>

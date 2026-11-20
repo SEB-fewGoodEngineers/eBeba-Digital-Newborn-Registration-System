@@ -183,8 +183,15 @@ export default function ApplyPage() {
     const reg = created || existing;
     return (
       <Box sx={{ maxWidth: 640, mx: "auto", mt: 4, px: 2 }}>
-        <Paper sx={{ p: 4 }}>
-          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+        <Paper sx={{ p: { xs: 2, sm: 4 } }}>
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
             <Typography variant="h5" component="h1">
               My application
             </Typography>
@@ -217,36 +224,46 @@ export default function ApplyPage() {
           </Box>
 
           {reg.certificate?.pdfGenerated && (
-            <Box sx={{ mt: 2 }}>
+            <Stack spacing={2} sx={{ mt: 3, mb: 3, alignItems: "flex-start" }}>
               <Button
                 variant="contained"
                 onClick={() => handleDownloadCertificate(reg.certificate.id)}
                 disabled={downloading}
                 type="button"
+                sx={{ maxWidth: "100%" }}
               >
                 {downloading ? "Preparing…" : "Download certificate (PDF)"}
               </Button>
-              <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", lineHeight: 1.7 }}
+              >
                 This is a DEMO certificate. The digital signature proves the
                 file has not been altered since it was signed by the eBeba demo
                 system. It is not a qualified electronic signature under
                 Montenegrin law and has no legal effect.
               </Typography>
               {downloadError && (
-                <Alert severity="error" sx={{ mt: 1 }}>
+                <Alert severity="error" sx={{ width: "100%" }}>
                   {downloadError}
                 </Alert>
               )}
-            </Box>
+            </Stack>
           )}
 
           {!isEditing ? (
-            <Stack spacing={1}>
+            <Stack spacing={1} sx={{ mt: 2 }}>
               <Typography>
-                Baby: {reg.proposedFirstName} {reg.proposedLastName}
+                <strong>Baby:</strong> {reg.proposedFirstName}{" "}
+                {reg.proposedLastName}
               </Typography>
-              <Typography>Address: {reg.residentialAddress}</Typography>
-              <Typography>Municipality: {reg.municipality}</Typography>
+              <Typography>
+                <strong>Residential address:</strong> {reg.residentialAddress}
+              </Typography>
+              <Typography>
+                <strong>Municipality:</strong> {reg.municipality}
+              </Typography>
 
               {reg.status === "returned" && (
                 <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
@@ -364,7 +381,7 @@ export default function ApplyPage() {
 
   return (
     <Box sx={{ maxWidth: 640, mx: "auto", mt: 4, px: 2 }}>
-      <Paper sx={{ p: 4 }}>
+      <Paper sx={{ p: { xs: 2, sm: 4 } }}>
         <Typography variant="h5" component="h1" gutterBottom>
           Apply to register my baby
         </Typography>
