@@ -7,6 +7,7 @@ const SERVER_URL = import.meta.env.VITE_BACK_END_SERVER_URL;
 
 // One shared Socket.io connection.
 let socket = null;
+let connectTimer = null;
 
 // Connect only when a user has a token.
 export const connectNotificationSocket = () => {
@@ -25,8 +26,15 @@ export const connectNotificationSocket = () => {
     });
   }
 
-  if (!socket.connected) {
-    socket.connect();
+  if (!socket.active && connectTimer === null) {
+    // Let React finish effect cleanup before starting a network handshake.
+    const pendingSocket = socket;
+    connectTimer = setTimeout(() => {
+      connectTimer = null;
+      if (socket === pendingSocket && getToken() && !pendingSocket.active) {
+        pendingSocket.connect();
+      }
+    }, 0);
   }
 
   return socket;
@@ -37,6 +45,8 @@ export const getNotificationSocket = () => socket;
 
 // Close the connection and remove listeners on sign-out.
 export const disconnectNotificationSocket = () => {
+  clearTimeout(connectTimer);
+  connectTimer = null;
   if (socket) {
     socket.disconnect();
     socket.removeAllListeners();

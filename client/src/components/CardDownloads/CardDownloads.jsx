@@ -31,8 +31,8 @@ export default function CardDownloads({ baby }) {
   };
 
   return (
-    <Stack spacing={1} alignItems="flex-start">
-      <Stack direction="row" alignItems="center">
+    <Stack spacing={1} sx={{ alignItems: "flex-start" }}>
+      <Stack direction="row" sx={{ alignItems: "center" }}>
         <Typography variant="h6" component="h3">
           Documents
         </Typography>

@@ -1,0 +1,154 @@
+:root {
+  --eb-ink: #102d46;
+  --eb-muted: #4b6272;
+  --eb-teal: #006d69;
+  --eb-deep: #004f50;
+  --eb-mint: #e7f5f2;
+  --eb-line: #d7e3e7;
+  --eb-page: #f5f8fa;
+  --eb-radius: 14px;
+}
+html body {
+  margin: 0;
+  background: var(--eb-page);
+  color: var(--eb-ink);
+  font-family: Roboto, "Segoe UI", sans-serif;
+}
+#root { min-height: 100vh; }
+#root .MuiAppBar-root {
+  background: var(--eb-ink);
+  color: white;
+  box-shadow: inset 0 -2px 0 #297171;
+}
+#root .MuiToolbar-root { gap: clamp(4px, 1vw, 14px); }
+#root .MuiAppBar-root .MuiButton-root { color: white; }
+#root .MuiDrawer-paper {
+  background: var(--eb-ink);
+  color: white;
+  border: 0;
+}
+#root .MuiDrawer-paper .MuiListItemIcon-root { color: #b9e6df; }
+#root .MuiDrawer-paper .Mui-selected { background: var(--eb-teal); color: white; }
+#root h1, #root h2, #root h3 { line-height: 1.19; letter-spacing: -.025em; }
+#root h1 { font-size: clamp(1.85rem, 3.8vw, 2.8rem); font-weight: 700; }
+#root h2 { font-size: clamp(1.3rem, 2.2vw, 1.65rem); font-weight: 650; }
+#root h3 { font-size: 1.08rem; font-weight: 650; }
+#root .MuiCard-root, #root .MuiTableContainer-root {
+  background: white;
+  color: var(--eb-ink);
+  border: 1px solid var(--eb-line);
+  border-radius: var(--eb-radius);
+  box-shadow: 0 3px 12px rgb(16 45 70 / 4%);
+}
+#root .MuiCardContent-root { padding: clamp(18px, 3vw, 28px); }
+#root .MuiCardContent-root > .MuiStack-root > h2 {
+  border-bottom: 1px solid var(--eb-line);
+  padding-bottom: .7em;
+}
+#root .MuiButton-root {
+  font-family: inherit;
+  text-transform: none;
+  font-weight: 650;
+  letter-spacing: 0;
+  border-radius: 9px;
+  min-height: 40px;
+}
+#root .MuiButton-contained { box-shadow: none; }
+#root .MuiButton-contained.MuiButton-colorPrimary:not(.Mui-disabled) {
+  background: var(--eb-teal);
+  color: white;
+}
+#root .MuiButton-contained.MuiButton-colorPrimary:not(.Mui-disabled):hover {
+  background: var(--eb-deep);
+}
+#root .MuiButton-outlined.MuiButton-colorPrimary:not(.Mui-disabled) {
+  border-color: #96b9b9;
+  color: var(--eb-deep);
+}
+#root .MuiAppBar-root .MuiButton-outlined.MuiButton-colorPrimary:not(.Mui-disabled) { color: white; }
+#root .MuiOutlinedInput-root { border-radius: 9px; }
+#root .MuiOutlinedInput-root.Mui-focused:not(.Mui-error) .MuiOutlinedInput-notchedOutline { border-color: var(--eb-teal); }
+#root .MuiInputLabel-root.Mui-focused:not(.Mui-error) { color: var(--eb-teal); }
+#root .MuiTableCell-head {
+  background: #edf3f5;
+  color: var(--eb-ink);
+  font-weight: 700;
+}
+#root .MuiTableCell-root { border-bottom-color: var(--eb-line); }
+#root .MuiTableRow-hover:hover { background: #f3f9f8; }
+#root .MuiChip-root { font-weight: 600; }
+body .MuiMenu-paper, body .MuiDialog-paper { border-radius: var(--eb-radius); }
+body :is(button, a, [role="button"]):focus-visible {
+  outline: 3px solid #168c99;
+  outline-offset: 3px;
+}
+
+/* Public pages */
+#root:has(.eb-public) .MuiAppBar-root {display:none}
+.eb-public {--navy:#102956;--teal:#007a78;background:white;color:var(--navy);font-family:Roboto,"Segoe UI",sans-serif;line-height:1.55;min-height:100vh}
+.eb-public * {box-sizing:border-box}
+.eb-public a {color:inherit}
+.eb-public p {margin:0;color:#364d68}
+.eb-public .eb-header {border-bottom:1px solid #dce7ec;background:white}
+.eb-bar,.eb-wrap,.eb-public footer {max-width:1440px;margin:auto}
+.eb-bar {display:flex;align-items:center;gap:18px;padding:16px clamp(16px,3vw,50px)}
+.eb-brand {display:inline-flex;align-items:center;gap:5px;font-size:30px;font-weight:750;letter-spacing:-1px;text-decoration:none}
+.eb-brand svg {font-size:40px;color:var(--teal)}
+.eb-tag {border-left:1px solid #c4d4dd;padding-left:15px;font-size:13px;line-height:1.2}
+.eb-bar nav,.eb-actions {display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+.eb-bar nav {margin:auto;gap:clamp(10px,1.4vw,24px)}
+.eb-bar nav a {font-size:14px;text-decoration:none;font-weight:600;padding:6px 0;border-bottom:2px solid transparent}
+.eb-bar nav a[aria-current],.eb-bar nav a:hover {border-color:var(--teal)}
+.eb-public .eb-btn {text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:43px;padding:9px 17px;border-radius:9px;background:var(--navy);border:1px solid var(--navy);color:white;font-size:15px;font-weight:650}
+.eb-public .eb-btn.outline {background:white;color:var(--navy)}
+.eb-public .eb-btn:hover {filter:brightness(.91)}
+.eb-btn svg {font-size:18px}
+.eb-intro {display:grid;grid-template-columns:46% 54%;background:#f8fbfd}
+.eb-intro>div:first-child {align-self:center;padding:clamp(28px,4vw,65px)}
+#root .eb-public h1 {font-size:clamp(36px,4.1vw,62px);margin:0 0 16px;line-height:1.05;letter-spacing:-.045em}
+.eb-intro em {color:var(--teal);font-style:normal}
+.eb-intro p,.eb-guide-intro>p:last-child {font-size:clamp(16px,1.2vw,20px);max-width:55ch}
+.eb-intro .eb-actions {margin-top:24px}
+.eb-family {min-height:320px;background:url("./ebeba-family.webp") center / cover no-repeat;border-radius:22% 0 0 8%}
+.eb-benefits {display:grid;grid-template-columns:repeat(4,1fr);gap:18px;background:#eef7fc;padding:25px clamp(20px,3vw,48px)}
+.eb-benefits>div,.eb-cards article {display:flex;align-items:flex-start;gap:14px}
+.eb-benefits svg,.eb-cards article>svg {flex:none;background:#d2f1ee;color:var(--teal);border-radius:15px;padding:10px;width:49px;height:49px}
+.eb-benefits p {font-size:14px;line-height:1.45}
+.eb-access,.eb-faq,.eb-guide-layout {padding:32px clamp(16px,3vw,48px)}
+#root .eb-public h2 {font-size:clamp(22px,2.3vw,34px);margin:0 0 18px}
+.eb-access>h2 {text-align:center}
+.eb-cards,.eb-guide-layout {display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.eb-cards article,.eb-guide-intro {background:#e7f6f3;border-radius:20px;padding:clamp(22px,3vw,42px)}
+.eb-cards article:nth-child(2),.eb-guide-intro.hospital {background:#eaf3fc}
+.eb-cards article:nth-child(2)>svg {color:#254f87;background:#d7e7fa}
+#root .eb-cards h3 {font-size:25px;margin:0 0 6px}
+.eb-cards .eb-btn {margin-top:18px;background:var(--teal);border-color:transparent}
+.eb-cards article:nth-child(2) .eb-btn {background:#254f87}
+.eb-faq {max-width:960px;margin:auto}
+.eb-faq details {padding:14px 0;border-bottom:1px solid #dce7ec}
+.eb-faq summary {cursor:pointer;font-weight:600}
+.eb-faq details p {padding-top:8px}
+.eb-public footer {display:flex;align-items:center;flex-wrap:wrap;gap:10px;border-top:1px solid #dce7ec;padding:24px clamp(16px,3vw,48px);font-size:14px}
+.eb-public footer svg {color:var(--teal)}
+.eb-guide-intro {margin:24px clamp(16px,3vw,48px) 0}
+.eb-role {display:flex;align-items:center;gap:6px;padding:20px 0 8px;font-weight:650}
+.eb-guide-layout {grid-template-columns:2fr 1fr;align-items:start}
+.eb-steps {padding-left:2rem;margin:0}
+.eb-steps li {padding:0 0 22px 6px}
+.eb-steps li::marker {color:var(--teal);font-weight:700}
+#root .eb-guide-layout h2 {font-size:21px;margin:0 0 5px}
+.eb-guide-layout aside {border:1px solid #dce7ec;border-radius:16px;padding:24px}
+.eb-guide-layout .eb-btn {margin-top:18px}
+.eb-secondary {display:block;margin-top:12px;font-size:14px}
+@media(max-width:940px){
+ .eb-bar {flex-wrap:wrap}.eb-bar nav {order:3;width:100%;justify-content:center}.eb-bar>.eb-actions {margin-left:auto}
+ .eb-benefits {grid-template-columns:1fr 1fr}
+}
+@media(max-width:650px){
+ .eb-bar {gap:8px}.eb-tag {display:none}.eb-bar>.eb-actions {gap:5px}.eb-bar .eb-btn {padding:7px 10px;font-size:13px}
+ .eb-bar nav {gap:12px}.eb-bar nav a {font-size:13px}
+ .eb-intro,.eb-cards,.eb-guide-layout {grid-template-columns:1fr}
+ .eb-family {min-height:0;aspect-ratio:2.05;border-radius:0}
+ .eb-benefits {gap:16px}.eb-benefits>div {flex-direction:column;gap:6px}
+ .eb-access,.eb-faq,.eb-guide-layout {padding-block:24px}
+}

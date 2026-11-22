@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UserContext } from "./UserContext";
 import { getToken, SESSION_ENDED_EVENT } from "../services/api";
 import { getMe, signOut as removeSession } from "../services/authService";
@@ -12,14 +12,37 @@ export default function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(() => Boolean(getToken()));
 
-  // Restore an existing session when the page loads.
-  useEffect(() => {
-    if (!getToken()) return;
+  const restoreRequest = useRef(null);
+  const sessionToken = user ? getToken() : null;
+  const userId = user?._id ?? user?.id;
 
-    getMe()
-      .then((me) => setUser(me))
-      .catch(() => setUser(null))
-      .finally(() => setIsLoading(false));
+  // Share the restore request when StrictMode replays this effect.
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+
+    let current = true;
+    if (restoreRequest.current?.token !== token) {
+      restoreRequest.current = { token, promise: getMe() };
+    }
+
+    restoreRequest.current.promise
+      .then((me) => {
+        if (current && getToken() === token) setUser(me);
+      })
+      .catch(() => {
+        if (current && getToken() === token) setUser(null);
+      })
+      .finally(() => {
+        if (current) {
+          setIsLoading(false);
+          restoreRequest.current = null;
+        }
+      });
+
+    return () => {
+      current = false;
+    };
   }, []);
 
   // Handle expired or deactivated sessions.
@@ -34,7 +57,7 @@ export default function UserProvider({ children }) {
 
   // Keep the Socket.io connection aligned with the user session.
   useEffect(() => {
-    if (!user || !getToken()) {
+    if (!sessionToken) {
       disconnectNotificationSocket();
       return;
     }
@@ -44,7 +67,7 @@ export default function UserProvider({ children }) {
     return () => {
       disconnectNotificationSocket();
     };
-  }, [user]);
+  }, [userId, sessionToken]);
 
   // End both the HTTP session and the live connection.
   const signOut = useCallback(() => {

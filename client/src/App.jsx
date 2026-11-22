@@ -69,6 +69,10 @@ export default function App() {
       <Box component="main">
         <Routes>
           <Route path="/" element={user ? <HomePage /> : <LandingPage />} />
+          <Route path="/for-fzo" element={<LandingPage />} />
+          <Route path="/for-ministry" element={<LandingPage />} />
+          <Route path="/for-parents" element={<LandingPage />} />
+          <Route path="/for-hospitals" element={<LandingPage />} />
 
           <Route
             path="/sign-in"
