@@ -1,4 +1,5 @@
 
+const User = require("../../models/User");
 const Notification = require("../../models/Notification");
 const { getNotificationTemplate } = require("./templates");
 
@@ -57,7 +58,8 @@ const notify = async (
 
   // Only approved navigation destinations may be included.
   const allowedLink =
-    link === "/dashboard" ||
+    link === template.link ||
+    (!template.role && link === "/dashboard") ||
     (type === "birth_record.created" && link === "/babies/link");
   if (link !== undefined && !allowedLink) {
     throw new Error("Notification link is not allowed.");
@@ -119,7 +121,22 @@ const notifyParents = async (baby, { type, link = "/dashboard" }) => {
   }
 };
 
+// Each staff event uses the same recipient scope as its destination page.
+const notifyStaff = async (type, recipientId) => {
+  const template = getNotificationTemplate(type);
+  if (!template.role || (template.recipientField && !recipientId)) return;
+  const filter = { role: template.role, isActive: true };
+  if (template.recipientField) filter[template.recipientField] = recipientId;
+  try {
+    const recipients = await User.find(filter).select("_id").lean();
+    await notifyMany(recipients.map((user) => user._id), { type, link: template.link });
+  } catch (error) {
+    console.error("Staff notification failed:", type, error.message);
+  }
+};
+
 module.exports = {
+  notifyStaff,
   notify,
   notifyMany,
   notifyParents,

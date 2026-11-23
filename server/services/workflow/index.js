@@ -9,11 +9,10 @@ const InsuranceRecord = require("../../models/InsuranceRecord");
 const Institution = require("../../models/Institution");
 const {
   REGISTRATION_STATUS,
-  ROLES,
   INSTITUTION_TYPES,
 } = require("../../constants");
 const { MUNICIPALITY_JMBG } = require("../../constants/jmbgRegions");
-const User = require("../../models/User");
+
 
 // Demo JMBG region code: 99 (decided by the instructor).
 // Every JMBG in eBeba is fictional and is always shown with a DEMO badge.
@@ -203,7 +202,7 @@ const approveRegistration = async (registration, user) => {
 
   // 7. CSW case — upsert by babyId.
   if (cswId) {
-    await CswCase.findOneAndUpdate(
+    const existing = await CswCase.findOneAndUpdate(
       { babyId: baby._id },
       {
         $setOnInsert: {
@@ -214,13 +213,14 @@ const approveRegistration = async (registration, user) => {
           statusHistory: [],
         },
       },
-      { upsert: true, setDefaultsOnInsert: true },
+      { upsert: true, new: false, setDefaultsOnInsert: true },
     );
+    if (!existing) await notifyStaff("staff.csw_case_received", cswId);
   }
 
   // 8. Insurance record — upsert by babyId.
   if (fundId) {
-    await InsuranceRecord.findOneAndUpdate(
+    const existing = await InsuranceRecord.findOneAndUpdate(
       { babyId: baby._id },
       {
         $setOnInsert: {
@@ -231,8 +231,9 @@ const approveRegistration = async (registration, user) => {
           statusHistory: [],
         },
       },
-      { upsert: true, setDefaultsOnInsert: true },
+      { upsert: true, new: false, setDefaultsOnInsert: true },
     );
+    if (!existing) await notifyStaff("staff.insurance_received", fundId);
   }
 
   // 9. Audit — after all writes succeeded. One line, no PII.
@@ -262,33 +263,13 @@ const approveRegistration = async (registration, user) => {
     ),
   );
 
-  const hospitalStaff = await User.find({
-    role: ROLES.HOSPITAL_STAFF,
-    institutionId: baby.hospitalId,
-    isActive: true,
-  })
-    .select("_id")
-    .lean();
-
-  await Promise.all(
-    hospitalStaff.map((u) =>
-      notify(u._id, {
-        type: "registration.approved",
-        title: "A baby from your hospital was registered",
-        message: "Open your dashboard to see the details.",
-        link: "/dashboard",
-        babyId: baby._id,
-      }).catch((err) => {
-        console.error("notify hospital staff failed:", err.message);
-      }),
-    ),
-  );
+  await notifyStaff("staff.birth_registered", baby.hospitalId);
 
   return registration;
 };
 
 const audit = require("../audit");
-const { notify } = require("../notifications");
+const { notify, notifyStaff } = require("../notifications");
 
 // Return a registration to the parent for correction.
 // Throws 409 if the current status is not "pending" (transition() enforces).
@@ -364,6 +345,7 @@ const unreturnRegistration = async (registration, user, note) => {
     targetCollection: "registrations",
     targetDocumentId: registration._id,
   });
+  await notifyStaff("staff.review_requested");
   return registration;
 };
 

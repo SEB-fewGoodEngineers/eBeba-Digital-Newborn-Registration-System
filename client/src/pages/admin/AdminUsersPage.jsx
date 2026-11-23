@@ -1,4 +1,8 @@
 
+import Person from "@mui/icons-material/PersonOutlineOutlined";
+import Settings from "@mui/icons-material/SettingsOutlined";
+import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import AddPerson from "@mui/icons-material/PersonAddAltOutlined";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -56,6 +60,9 @@ const emptyForm = {
 export default function AdminUsersPage() {
   const { user: currentUser } = useUser();
 
+  const [managedId, setManagedId] = useState(null);
+  const [search, setSearch] = useState("");
+  const [creating, setCreating] = useState(false);
   const [users, setUsers] = useState([]);
   const [institutions, setInstitutions] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -114,6 +121,7 @@ export default function AdminUsersPage() {
       setUsers(updatedUsers);
 
       setForm(emptyForm);
+      setCreating(false);
       setMessage("Staff user created successfully.");
     } catch (err) {
       setError(err.message);
@@ -153,6 +161,9 @@ export default function AdminUsersPage() {
     (institution) => institution.type === roleInstitutionTypes[form.role],
   );
 
+  const managed = users.find((u) => u._id === managedId);
+  const matches = users.filter((u) => (u.firstName + " " + u.lastName).toLowerCase().includes(search.trim().toLowerCase()));
+
   if (loading) {
     return (
       <Box sx={{ p: 4 }}>
@@ -162,14 +173,12 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" component="h1" gutterBottom>
-        User administration
-      </Typography>
-
-      {/* N3 - REMINDERS */}
-      <RunRemindersCard />
-
+    <Box className="panel-page">
+      <header className="panel-heading"><div><h1>User accounts</h1>
+        <p>Manage staff accounts and access to eBeba.</p></div>
+        <div className="panel-actions">
+        <Button startIcon={<AddPerson />} variant="contained" aria-expanded={creating} onClick={() => setCreating(!creating)}>{creating ? "Close form" : "Add user"}</Button></div>
+      </header>
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
@@ -182,7 +191,7 @@ export default function AdminUsersPage() {
         </Alert>
       )}
 
-      <Paper sx={{ p: 3, mb: 4 }}>
+      {creating && <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom>
           Create staff user
         </Typography>
@@ -269,13 +278,11 @@ export default function AdminUsersPage() {
             </Button>
           </Stack>
         </Box>
-      </Paper>
+      </Paper>}
 
-      <Typography variant="h6" gutterBottom>
-        All users
-      </Typography>
+      <section className="accounts-sheet"><TextField size="small" label="Search by name" value={search} onChange={(e) => setSearch(e.target.value)} sx={{mb: 2}} />
 
-      {users.length === 0 ? (
+      {matches.length === 0 ? (
         <Typography>No users found.</Typography>
       ) : (
         <TableContainer component={Paper}>
@@ -283,7 +290,7 @@ export default function AdminUsersPage() {
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
+
                 <TableCell>Role</TableCell>
                 <TableCell>Institution</TableCell>
                 <TableCell>Status</TableCell>
@@ -292,13 +299,13 @@ export default function AdminUsersPage() {
             </TableHead>
 
             <TableBody>
-              {users.map((user) => (
+              {matches.map((user) => (
                 <TableRow key={user._id}>
                   <TableCell>
-                    {user.firstName} {user.lastName}
+                    <strong className="account-name"><Person />{user.firstName} {user.lastName}</strong>
                   </TableCell>
 
-                  <TableCell>{user.email}</TableCell>
+
 
                   <TableCell>
                     {ROLE_LABELS[user.role] || user.role}
@@ -309,7 +316,7 @@ export default function AdminUsersPage() {
                   </TableCell>
 
                   <TableCell>
-                    {user.isActive ? "Active" : "Inactive"}
+                    <span className={user.isActive ? "account-active" : "account-inactive"}>{user.isActive ? "Active" : "Inactive"}</span>
                   </TableCell>
 
                   <TableCell>
@@ -317,17 +324,9 @@ export default function AdminUsersPage() {
                       type="button"
                       size="small"
                       variant="outlined"
-                      disabled={
-                        user._id === currentUser?._id ||
-                        updatingId !== null
-                      }
-                      onClick={() => handleStatusChange(user)}
-                    >
-                      {updatingId === user._id
-                        ? "Saving..."
-                        : user.isActive
-                          ? "Deactivate"
-                          : "Activate"}
+                      startIcon={<Settings />}
+                      onClick={() => setManagedId(user._id)}
+                    >Manage account
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -336,6 +335,17 @@ export default function AdminUsersPage() {
           </Table>
         </TableContainer>
       )}
+      </section>
+      <Dialog open={Boolean(managed)} onClose={() => setManagedId(null)}>
+        <DialogTitle>Manage account</DialogTitle>
+        {managed && <DialogContent><h3>{managed.firstName} {managed.lastName}</h3><p>{managed.email}</p>
+          <p>{ROLE_LABELS[managed.role]} · {managed.isActive ? "Active" : "Inactive"}</p></DialogContent>}
+        <DialogActions><Button onClick={() => setManagedId(null)}>Close</Button>
+          {managed && <Button variant="outlined" disabled={managed._id === currentUser?._id || updatingId !== null} onClick={() => handleStatusChange(managed)}>
+            {managed.isActive ? "Deactivate" : "Activate"}
+          </Button>}</DialogActions>
+      </Dialog>
+      <details className="birth-facts"><summary>Reminders</summary><RunRemindersCard /></details>
     </Box>
   );
 }

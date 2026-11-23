@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link as RouterLink } from "react-router";
+import { Link as RouterLink, useSearchParams } from "react-router";
 import {
   Alert,
   Box,
@@ -23,6 +23,8 @@ import StatusBadge from "../../components/StatusBadge/StatusBadge";
 import StatusTimeline from "../../components/StatusTimeline/StatusTimeline";
 
 export default function ApplyPage() {
+  const [params] = useSearchParams();
+  const requestedBaby = params.get("babyId");
   const [babies, setBabies] = useState([]);
   const [babiesStatus, setBabiesStatus] = useState("loading");
   const [babiesError, setBabiesError] = useState("");
@@ -54,6 +56,9 @@ export default function ApplyPage() {
       .then((data) => {
         if (ignore) return;
         setBabies(data);
+        if (data.some((baby) => baby._id === requestedBaby)) {
+          setForm((previous) => ({ ...previous, babyId: requestedBaby }));
+        }
         setBabiesStatus("ready");
       })
       .catch((err) => {
@@ -64,7 +69,7 @@ export default function ApplyPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [requestedBaby]);
 
   // Load the existing application for the selected baby.
   // Reset of "existing"/"isEditing" lives in handleChange, not here.

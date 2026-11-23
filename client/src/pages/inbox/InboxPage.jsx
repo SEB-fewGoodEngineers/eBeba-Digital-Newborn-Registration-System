@@ -13,10 +13,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useUser } from "../../contexts/UserContext";
-import { subscribeToNotifications } from "../../services/socket";
 import {
-  addNotification,
-  getNotifications,
+  watchNotifications,
   isInternalLink,
 } from "../../services/notificationService";
 import { formatDateTime } from "../../utils/dates";
@@ -119,33 +117,10 @@ export default function InboxPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let ignore = false; // stops an old request from overwriting new data
-
-    getNotifications()
-      .then((data) => {
-        if (!ignore) {
-          setNotifications(data);
-          setStatus("ready");
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          setError(err.message);
-          setStatus("error");
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  // Stay in sync with new notifications.
-  useEffect(() => {
-    if (!user) return undefined;
-
-    return subscribeToNotifications((notification) => {
-      setNotifications((list) => addNotification(list, notification));
+    if (!user) return;
+    return watchNotifications(setNotifications, () => setStatus("ready"), (err) => {
+      setError(err.message);
+      setStatus("error");
     });
   }, [user]);
 

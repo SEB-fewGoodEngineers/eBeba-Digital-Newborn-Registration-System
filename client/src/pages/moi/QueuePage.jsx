@@ -6,19 +6,13 @@ import {
   Box,
   Button,
   CircularProgress,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TableContainer,
   Typography,
 } from "@mui/material";
 
 import { listRegistrations } from "../../services/registrationService";
 import { formatDate } from "../../utils/dates";
+import RecordPair from "../../components/Workspace/RecordPair";
 import StatusBadge from "../../components/StatusBadge/StatusBadge";
 
 export default function QueuePage() {
@@ -50,21 +44,21 @@ export default function QueuePage() {
   }, [filter]);
 
   const changeFilter = (newFilter) => {
+    if (newFilter === filter) return;
     setFilter(newFilter);
     setStatus("loading");
     setError("");
     setRows([]);
   };
 
-  const openReview = (registrationId) => {
-    navigate(`/moi/review/${registrationId}`);
+  const openReview = (registrationId, intent) => {
+    navigate(`/moi/review/${registrationId}`, {state: {intent}});
   };
 
   return (
-    <Box sx={{ maxWidth: 1100, mx: "auto", mt: 4, px: 2 }}>
-      <Paper sx={{ p: 3 }}>
+    <Box className="panel-page">
         <Typography variant="h5" component="h1" gutterBottom>
-          MoI queue
+          Birth registration – Review queue
         </Typography>
 
         <Typography
@@ -72,7 +66,7 @@ export default function QueuePage() {
           color="text.secondary"
           sx={{ mb: 2 }}
         >
-          Select a status and click an application to review it.
+          Review applications for birth registration and make a decision.
         </Typography>
 
         <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
@@ -114,65 +108,25 @@ export default function QueuePage() {
         )}
 
         {status === "ready" && rows.length > 0 && (
-          <TableContainer>
-            <Table
-              size="small"
-              aria-label={`${filter} registration applications`}
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell>Proposed name</TableCell>
-                  <TableCell>Date of birth</TableCell>
-                  <TableCell>Hospital</TableCell>
-                  <TableCell>Applied</TableCell>
-                  <TableCell>Status</TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {rows.map((r) => (
-                  <TableRow
-                    key={r._id}
-                    hover
-                    sx={{ cursor: "pointer" }}
-                    onClick={() => openReview(r._id)}
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        openReview(r._id);
-                      }
-                    }}
-                  >
-                    <TableCell>
-                      {r.proposedFirstName} {r.proposedLastName}
-                    </TableCell>
-
-                    <TableCell>
-                      {formatDate(r.birthDateTime)}
-                    </TableCell>
-
-                    <TableCell>
-                      {r.hospital?.name || "—"}
-                      {r.hospital?.municipality
-                        ? ` (${r.hospital.municipality})`
-                        : ""}
-                    </TableCell>
-
-                    <TableCell>
-                      {formatDate(r.createdAt)}
-                    </TableCell>
-
-                    <TableCell>
-                      <StatusBadge status={r.status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <RecordPair records={rows} heading="Registration review queue"
+            name={(r) => [r.proposedFirstName, r.proposedLastName].filter(Boolean).join(" ") || "Registration"}
+            caption={(r) => formatDate(r.createdAt)}
+            summary={(r) => <StatusBadge status={r.status} />}
+            details={(r) => <>
+              <dl className="record-fields">
+                <dt>Date of birth</dt><dd>{formatDate(r.birthDateTime)}</dd>
+                <dt>Hospital</dt><dd>{[r.hospital?.name, r.hospital?.municipality].filter(Boolean).join(", ") || "—"}</dd>
+                <dt>Application date</dt><dd>{formatDate(r.createdAt)}</dd>
+                <dt>Status</dt><dd><StatusBadge status={r.status} /></dd>
+              </dl>
+              <div className="decision-actions">{r.status === "pending" ? <>
+              <Button variant="outlined" onClick={() => openReview(r._id, "return")}>↶ Return for correction</Button>
+              <Button variant="contained" onClick={() => openReview(r._id, "approve")}>✓ Approve registration</Button>
+              </> : <Button variant="contained" onClick={() => openReview(r._id)}>Review application</Button>}</div>
+            </>}
+          />
         )}
-      </Paper>
+
     </Box>
   );
 }

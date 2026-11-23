@@ -1,0 +1,335 @@
+.workspace {
+  display: grid;
+  grid-template-columns: 224px minmax(0, 1fr);
+  min-height: 100vh;
+  background: #f3f7f8;
+  color: #173348;
+}
+.workspace-sidebar {
+  align-self: start;
+  position: sticky;
+  top: 0;
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 26px 14px;
+  background: #102c43;
+  color: white;
+}
+.workspace-brand, .workspace-sidebar nav a {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+.workspace-brand {
+  gap: 10px;
+  margin: 0 12px 36px;
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -.05em;
+}
+.workspace-brand svg { color: #8ce0d3; font-size: 36px; }
+.workspace-sidebar nav { display: grid; gap: 5px; }
+.workspace-sidebar nav a {
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 550;
+}
+.workspace-sidebar nav a:hover { background: #1b4057; }
+.workspace-sidebar nav a[aria-current="page"] { background: #086c6c; }
+.workspace-body { min-width: 0; }
+.workspace-header {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  min-height: 64px;
+  padding: 0 clamp(12px, 3vw, 40px);
+  background: white;
+  border-bottom: 1px solid #dce6e8;
+}
+.workspace-role {
+  background: #dff4ee;
+  color: #105d55;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 14px;
+  font-weight: 650;
+}
+.workspace-name { margin-left: auto; font-weight: 600; }
+.workspace-header button:not(.MuiButtonBase-root) {
+  background: white;
+  border: 1px solid #bed0d4;
+  color: #173348;
+  padding: 8px 12px;
+  font: inherit;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.workspace-body main { max-width: 1500px; margin: auto; }
+.workspace .MuiPaper-root:not(.MuiAppBar-root) { border-radius: 12px; }
+@media (max-width: 800px) {
+  .workspace { display: block; }
+  .workspace-sidebar { position: static; min-height: auto; padding: 12px; }
+  .workspace-brand { font-size: 22px; margin: 0 0 8px 6px; }
+  .workspace-brand svg { font-size: 26px; }
+  .workspace-sidebar nav { display: flex; overflow-x: auto; }
+  .workspace-sidebar nav a { flex: none; padding: 9px 12px; }
+  .workspace-header { min-height: 54px; gap: 8px; }
+}
+
+.workspace { background: #edf1f7; grid-template-columns: clamp(185px, 18vw, 248px) minmax(0, 1fr); }
+.workspace-sidebar { background: #10233f; }
+.workspace-header { min-height: 56px; }
+.workspace-role { background: none; padding: 0; color: #233449; }
+.workspace-sidebar nav a[aria-current="page"] { background: #007d78; }
+.panel-page { padding: clamp(16px, 2.2vw, 32px); }
+#root .panel-page h1 { font-size: clamp(26px, 2.5vw, 38px); margin: 0 0 6px; }
+.panel-heading,.panel-actions,.baby-id { display:flex; align-items:center; gap:14px; }
+.panel-heading { justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; }
+.panel-heading p,.panel-description { color:#435467; margin:4px 0 16px; }
+.panel-actions { flex-wrap:wrap; }
+.record-pair { display:grid; grid-template-columns:minmax(0, .92fr) minmax(0, 1.08fr); gap:16px; align-items:start; }
+.record-sheet,.birth-facts { background:white; border:1px solid #d5dfeb; border-radius:10px; padding:clamp(14px, 1.6vw, 24px); }
+#root .record-sheet h2,#root .list-title { font-size:20px; margin:0 0 14px; }
+.record-option { width:100%; border:0; border-bottom:1px solid #e0e7ee; background:white; color:#152e45; display:flex; align-items:center; gap:15px; padding:14px 12px; font:inherit; text-align:left; cursor:pointer; }
+.record-option span:nth-child(2) { flex:1; min-width:0; overflow-wrap:anywhere; }
+.record-option small { display:block; margin-top:3px; color:#475d6b; }
+.record-option[aria-pressed=true],.workspace .agency-pair .Mui-selected { background:#ddf3ee; box-shadow:inset 3px 0 #00867e; }
+.record-option svg { color:#007d78; }
+.record-fields { display:grid; grid-template-columns:minmax(90px, .8fr) minmax(0,1.2fr); gap:12px; padding-block:14px; border-block:1px solid #e1e8ed; }
+.record-fields dd { margin:0; font-weight:600; overflow-wrap:anywhere; }
+.family-summary { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.65fr); gap:20px; align-items:center; }
+.baby-id { border-right:1px solid #d7e1e8; padding-right:15px; overflow-wrap:anywhere; }
+.baby-id>svg { background:#dff4ef; color:#007a74; padding:8px; font-size:52px; border-radius:12px; }
+.baby-id h2,.tracker h3 { margin:0 0 12px; }
+.baby-id p { margin:6px 0; font-size:14px; }
+.tracker ol { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); list-style:none; padding:0; margin:0; gap:4px; }
+.tracker li { position:relative; display:grid; justify-items:center; align-content:start; text-align:center; gap:7px; font-size:12px; }
+.tracker li::before { content:""; background:#17877f; border:3px solid white; border-radius:50%; width:12px; height:12px; z-index:1; }
+.tracker li:not(:last-child)::after { content:""; position:absolute; top:8px; left:50%; width:calc(100% + 4px); border-top:2px solid #bedad6; }
+.tracker .MuiChip-root { max-width:100%; height:auto; min-height:22px; }
+.tracker .MuiChip-label { white-space:normal; }
+.birth-facts { margin-top:16px; }
+.birth-facts summary { cursor:pointer; color:#145f61; font-weight:650; }
+.account-active,.account-inactive { padding:4px 10px; border-radius:6px; background:#d9f4e2; color:#155737; }
+.account-inactive { background:#e8edf2; color:#415060; }
+.agency-pair > div { min-width:0; }
+.agency-pair .MuiCard-root { padding:10px; }
+@media(max-width:800px) {
+  .record-pair,.family-summary { grid-template-columns:1fr; }
+  .baby-id { border-right:0; }
+  .tracker ol { grid-template-columns:repeat(2,minmax(0,1fr)); row-gap:15px; }
+  .tracker li:nth-child(2)::after { display:none; }
+}
+
+.tracker li[data-complete="false"]::before { background:white; border:2px solid #70949c; }
+
+/* Proportions shared by the six dashboard references. */
+.workspace { color:#0c1930; background:linear-gradient(112deg,#f0f3f8,#e5ebf4); grid-template-columns:clamp(200px,18vw,286px) minmax(0,1fr); }
+.workspace-sidebar { background:linear-gradient(145deg,#102543,#092039); padding:22px 11px; }
+.workspace-brand { margin:0 15px 35px; font-size:clamp(29px,2.7vw,42px); gap:10px; }
+.brand-symbol { width:clamp(42px,4.5vw,68px); aspect-ratio:1.15; position:relative; display:inline-grid; place-items:center; color:#18decf; }
+.workspace-brand .brand-symbol svg { position:absolute; color:inherit; width:100%; height:100%; }
+.workspace-brand .brand-symbol svg+svg { width:49%; height:49%; bottom:14%; }
+.workspace-sidebar nav a { font-size:clamp(15px,1.32vw,21px); padding:14px 12px; font-weight:500; }
+.workspace-sidebar nav a svg { font-size:1.45em; }
+.workspace-sidebar nav a[aria-current=page] { background:linear-gradient(100deg,#008c88,#009d94); font-weight:700; }
+.workspace-header { min-height:clamp(54px,4.4vw,68px); padding-inline:clamp(14px,2vw,32px); }
+.workspace-role { font-size:clamp(16px,1.42vw,22px); font-weight:400; }
+.workspace-spacer { flex:1; }
+#root .workspace .panel-page { padding:clamp(15px,1.8vw,28px); }
+#root .panel-page h1 { font-weight:800; font-size:clamp(28px,2.75vw,43px); color:#0a172b; }
+#root .workspace[data-panel="Parent"] h1,#root .workspace[data-panel="Nurse"] h1 { font-size:clamp(32px,3.3vw,51px); }
+.panel-description,.panel-heading p { font-size:clamp(16px,1.35vw,21px); }
+.workspace .panel-page .MuiButton-root { font-size:clamp(14px,1.1vw,18px); }
+#root .workspace .MuiButton-containedPrimary { background:#00847c; }
+#root .workspace .MuiCard-root,.record-sheet,.accounts-sheet { border:1px solid #bdcbdc; border-radius:10px; box-shadow:none; }
+#root .record-sheet h2,#root .agency-pair h2 { margin:0; font-size:clamp(21px,1.65vw,28px); }
+.record-sheet h2 + button { margin-top:13px; }
+.record-option,.workspace .agency-pair .MuiListItemButton-root { gap:14px; padding:15px 12px; min-height:72px; }
+.record-option>svg,.agency-pair .MuiListItemButton-root>svg,.detail-heading>svg,.family-line>svg { font-size:clamp(28px,2.85vw,44px); flex:none; }
+.record-option strong,.row-name strong,.account-name { font-size:clamp(17px,1.35vw,22px); }
+.record-option[aria-pressed=true],.workspace .agency-pair .Mui-selected { background:#dff5f2; border-radius:7px; }
+.row-name { flex:1; min-width:0; overflow-wrap:anywhere; }
+.row-name small,.row-name strong { display:block; }
+.row-name small,.detail-heading small { font-size:clamp(14px,1.1vw,18px); font-weight:400; }
+.detail-heading,.family-line,.account-name { display:flex; align-items:center; gap:14px; }
+.family-line { border-block:1px solid #d4dce4; margin:14px 0; padding:18px 0; }
+.family-line p { margin:5px 0; }
+.agency-pair > div:first-child { flex:.87; }
+.review-more>summary,.hospital-complete { display:block; width:fit-content; margin:18px 0 0 auto; padding:12px 22px; background:#00847c; border-radius:7px; color:white; font-weight:700; cursor:pointer; }
+.hospital-complete { background:#d5f4d9; color:#18532c; cursor:default; margin-left:0; }
+.search-tools,.extra-info { font-size:14px; color:#39576a; margin:8px 0 12px; }
+.search-tools summary,.extra-info summary { cursor:pointer; }
+.search-tools[open] summary,.extra-info[open] summary { margin-bottom:12px; }
+.decision-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+.accounts-sheet { padding:20px; background:white; }
+.accounts-sheet>.MuiTextField-root { width:min(62%,680px); }
+#root .accounts-sheet .MuiTableContainer-root { border:0; border-radius:0; }
+.workspace .panel-page .MuiChip-root { border-radius:7px; font-size:clamp(12px,1.02vw,16px); }
+.workspace .MuiChip-colorWarning { background:#fff0c5; color:#5f4600; }
+.workspace .MuiChip-colorSuccess { background:#d7f5da; color:#145824; }
+.workspace .MuiChip-colorInfo { background:#d6f3ef; color:#075e5b; }
+.workspace .family-summary { padding-block:10px; grid-template-columns:minmax(0,.85fr) minmax(0,1.5fr); }
+#root .baby-id h2 { font-size:clamp(30px,3vw,48px); }
+.baby-id>svg { font-size:clamp(56px,6vw,96px); }
+.baby-id p { font-size:clamp(15px,1.23vw,20px); }
+#root .tracker h3 { font-size:clamp(22px,2vw,32px); }
+.tracker { display:grid; }
+.tracker ol { grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.tracker li::before { display:none; }
+.tracker li:not(:last-child)::after { top:15px; border-width:4px; width:calc(100% + 10px); }
+.tracker li[data-stage=done]::after { border-color:#11a999; }
+.stage-dot { box-sizing:border-box; z-index:1; display:grid; place-items:center; border-radius:50%; width:32px; height:32px; background:white; border:3px solid #bbc6d2; }
+[data-stage=done] .stage-dot { background:#009d8c; color:white; border-color:#009d8c; font-size:19px; }
+[data-stage=current] .stage-dot { background:#008e82; border:3px solid #008e82; box-shadow:inset 0 0 0 4px white; }
+.tracker li strong { width:100%; border-radius:8px; padding:6px 0; font-size:clamp(13px,1.15vw,18px); background:#ecf0f4; }
+.tracker li[data-stage=done] strong { background:#daf4df; }
+.tracker li[data-stage=current] strong { background:#fff0cb; }
+.tracker .MuiButton-root { justify-self:end; margin-top:18px; }
+.application-detail[hidden] { display:none; }
+@media(max-width:800px) {
+ .workspace-sidebar { padding:10px; }
+ .workspace-brand { margin:0 0 8px; font-size:22px; }
+ .brand-symbol { width:32px; }
+ .workspace-sidebar nav a { padding:9px; font-size:14px; }
+ .workspace .family-summary { grid-template-columns:1fr; }
+ .tracker li:nth-child(2)::after { display:block; }
+ .accounts-sheet { padding:10px; }
+ .accounts-sheet>.MuiTextField-root { width:100%; }
+}
+
+.workspace-mark { width:clamp(52px,4.7vw,75px); height:auto; }
+.account-trigger { display:flex; align-items:center; gap:8px; font-size:19px; color:#101b30; }
+.workspace-header > .MuiIconButton-root:last-of-type { border-left:1px solid #bdc7d1; border-radius:0; padding-left:18px; }
+#root .workspace .panel-heading p { margin-bottom:0; }
+#root .workspace .panel-heading .MuiButton-root { margin-bottom:0; }
+#root .workspace .panel-page .MuiButton-contained { padding:10px 20px; line-height:1.35; }
+#root .workspace .agency-pair .Mui-selected,#root .workspace .record-option[aria-pressed=true] { background:#def4f2; }
+#root .workspace .MuiBadge-colorError { background:#00867d; }
+@media(min-width:1000px) {
+ .workspace { min-height:100dvh; }
+ .workspace-brand { margin:0 0 30px 22px; }
+ .workspace-sidebar nav a { padding:13px 18px; gap:18px; }
+ .workspace-header { min-height:60px; }
+ .workspace[data-panel=Parent] .workspace-header,.workspace[data-panel=Nurse] .workspace-header { min-height:68px; }
+ .workspace .panel-heading { margin-bottom:18px; }
+ .workspace .accounts-sheet { padding:20px 12px 10px; }
+ .workspace .accounts-sheet>.MuiTextField-root { margin:0 8px 20px; width:57%; }
+ #root .workspace .accounts-sheet td,#root .workspace .accounts-sheet th { font-size:clamp(16px,1.3vw,20px); padding-block:14px; }
+ .workspace .family-summary { min-height:236px; grid-template-columns:38% minmax(0,1fr); }
+ .baby-id { align-self:stretch; }
+ .baby-id>svg { width:clamp(78px,7.8vw,120px); height:auto; }
+ .tracker { padding-left:12px; }
+ .tracker ol { margin:12px 0; }
+ .stage-dot { width:40px; height:40px; }
+ .tracker li:not(:last-child)::after { top:18px; }
+ .tracker li strong { min-height:48px; }
+ #root .tracker .MuiButton-root { font-size:21px; padding:15px 34px; }
+ .workspace[data-panel=Nurse] .record-pair { grid-template-columns:1.08fr 1fr; gap:22px; }
+ .workspace[data-panel=Nurse] .record-sheet { padding:15px; }
+ .workspace[data-panel=Nurse] .record-sheet:first-child>h2 { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+ .workspace[data-panel=Nurse] .record-option { min-height:88px; }
+ .workspace[data-panel=Nurse] .record-option strong { font-size:26px; }
+ .workspace[data-panel=Nurse] .record-option>small { font-size:20px; font-weight:700; }
+ #root .workspace .agency-pair { display:grid; grid-template-columns:minmax(0,.84fr) minmax(0,1fr); }
+ #root .workspace .agency-pair .MuiCardContent-root { padding:12px; }
+ #root .workspace .agency-pair .MuiListItemButton-root { padding-block:18px; }
+ .workspace .record-fields { font-size:clamp(16px,1.25vw,20px); gap:7px 16px; }
+ #root .workspace[data-panel=FZO] .review-more>summary { margin-inline:auto; width:fit-content; padding-inline:52px; }
+}
+@media(max-width:800px) { .workspace-mark { width:32px; } }
+
+#root .workspace[data-panel="Parent"] .panel-page h1 {
+  font-size: clamp(28px, 2.7vw, 42px);
+}
+#root .workspace[data-panel="Parent"] .baby-id h2 {
+  font-size: clamp(25px, 2.4vw, 36px);
+}
+#root .workspace[data-panel="Parent"] .tracker h3 {
+  font-size: clamp(20px, 1.7vw, 26px);
+}
+.workspace[data-panel="Parent"] .baby-id p {
+  font-size: clamp(14px, 1.05vw, 17px);
+}
+.workspace[data-panel="Parent"] .tracker li strong {
+  font-size: clamp(13px, 1vw, 16px);
+}
+@media (min-width: 801px) {
+  .workspace[data-panel="Parent"] .workspace-sidebar nav a,
+  .workspace[data-panel="Parent"] .workspace-role,
+  #root .workspace[data-panel="Parent"] .tracker .MuiButton-root {
+    font-size: clamp(15px, 1.15vw, 18px);
+  }
+}
+
+
+/* Parent dashboard: compact type and cards */
+#root .workspace[data-panel="Parent"] .panel-page h1 {
+  font-size: 30px;
+}
+#root .workspace[data-panel="Parent"] .baby-id h2 {
+  font-size: 24px;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+#root .workspace[data-panel="Parent"] .tracker h3 {
+  font-size: 20px;
+}
+#root .workspace[data-panel="Parent"] .baby-id p,
+#root .workspace[data-panel="Parent"] .tracker .MuiButton-root {
+  font-size: 15px;
+}
+#root .workspace[data-panel="Parent"] .tracker li strong {
+  font-size: 14px;
+}
+@media (min-width: 801px) {
+  .workspace[data-panel="Parent"] .workspace-sidebar nav a,
+  .workspace[data-panel="Parent"] .workspace-role { font-size: 16px; }
+  .workspace[data-panel="Parent"] .family-summary { min-height: 165px; }
+  .workspace[data-panel="Parent"] .baby-id > svg { width: 68px; height: 68px; }
+  .workspace[data-panel="Parent"] .workspace-brand { font-size: 30px; }
+  .workspace[data-panel="Parent"] .workspace-mark { width: 50px; }
+}
+@media (max-width: 800px) {
+  #root .workspace[data-panel="Parent"] .panel-page h1 { font-size: 26px; }
+  #root .workspace[data-panel="Parent"] .baby-id h2 { font-size: 22px; }
+  #root .workspace[data-panel="Parent"] .tracker h3 { font-size: 18px; }
+}
+
+/* Shared dashboard typography */
+#root .workspace[data-panel] {
+  --panel-heading: 30px;
+  --panel-name: 24px;
+  --panel-section: 20px;
+  --panel-nav: 16px;
+  font-family: Roboto, "Segoe UI", sans-serif;
+  font-size: 15px;
+}
+#root .workspace[data-panel] :is(.MuiTypography-root, .MuiButton-root, .MuiTableCell-root, .MuiInputBase-root, .MuiFormLabel-root, .MuiChip-root, button, input, select, textarea) {
+  font-family: inherit;
+}
+#root .workspace[data-panel] main h1 { font-size: var(--panel-heading); }
+#root .workspace[data-panel] main .panel-page h1 { font-size: var(--panel-heading); }
+#root .workspace[data-panel] .baby-id h2,
+#root .workspace[data-panel] .detail-heading h2,
+#root .workspace[data-panel] h2.detail-heading { font-size: var(--panel-name); }
+#root .workspace[data-panel] :is(.tracker h3, .record-sheet > h2:not(.detail-heading), .list-title, .agency-pair h3) { font-size: var(--panel-section); }
+#root .workspace[data-panel] :is(.workspace-sidebar nav a, .workspace-role, .account-trigger) { font-size: var(--panel-nav); }
+#root .workspace[data-panel] :is(.panel-page .MuiButton-root, .tracker .MuiButton-root, .review-more > summary, .panel-description, .panel-heading p, .baby-id p, .record-fields, .record-option small, .row-name small, .detail-heading small, .accounts-sheet td, .accounts-sheet th, .MuiInputBase-root) { font-size: 15px; }
+#root .workspace[data-panel] :is(.record-option strong, .row-name strong, .account-name, .family-line strong) { font-size: 16px; }
+#root .workspace[data-panel] :is(.MuiChip-root, .account-active, .account-inactive, .tracker li strong) { font-size: 14px; }
+@media (min-width: 801px) {
+  #root .workspace[data-panel] .workspace-brand { font-size: 30px; }
+  #root .workspace[data-panel] .workspace-mark { width: 50px; }
+}
+@media (max-width: 800px) {
+  #root .workspace[data-panel] {
+    --panel-heading: 26px;
+    --panel-name: 22px;
+    --panel-section: 18px;
+    --panel-nav: 14px;
+  }
+}

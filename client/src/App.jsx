@@ -3,7 +3,7 @@ import { Box, CircularProgress } from "@mui/material";
 
 // COMPONENTS
 import RequireRole from "./components/RequireRole/RequireRole";
-import NavBar from "./components/NavBar/NavBar";
+import Workspace from "./components/Workspace/Workspace";
 
 // PAGES
 import LandingPage from "./pages/home/LandingPage";
@@ -64,8 +64,7 @@ export default function App() {
   }
 
   return (
-    <>
-      <NavBar />
+    <Workspace>
       <Box component="main">
         <Routes>
           <Route path="/" element={user ? <HomePage /> : <LandingPage />} />
@@ -290,6 +289,6 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Box>
-    </>
+    </Workspace>
   );
 }

@@ -358,3 +358,46 @@ test("rejects unapproved notification links", async () => {
 
   assert.equal(saveCalled, false);
 });
+
+test("staff events persist and emit only to active users in the intended scope", async (t) => {
+  const User = require("../models/User");
+  const { notifyStaff } = require("../services/notifications");
+  const sent = [];
+  const saved = [];
+  let filter;
+  t.mock.method(User, "find", (query) => {
+    filter = query;
+    return { select: () => ({ lean: async () => [{ _id: USER_ID }] }) };
+  });
+  Notification.create = async (data) => {
+    saved.push(data);
+    return { ...data, _id: NOTIFICATION_ID };
+  };
+  setSocketServer({ to: (room) => ({ emit: (event, payload) => sent.push({ room, event, payload }) }) });
+
+  for (const [type, role, field, link] of [
+    ["staff.review_requested", "moi_staff", null, "/moi/queue"],
+    ["staff.birth_registered", "hospital_staff", "institutionId", "/hospital/babies"],
+    ["staff.csw_case_received", "csw_staff", "institutionId", "/csw-cases"],
+    ["staff.insurance_received", "health_insurance_staff", "institutionId", "/insurance-records"],
+    ["staff.patient_assigned", "pediatrician", "_id", "/pediatrician/babies"],
+    ["staff.account_created", "admin", null, "/admin/audit-logs"],
+    ["staff.access_changed", "admin", null, "/admin/audit-logs"],
+  ]) {
+    if (field) {
+      filter = null;
+      await notifyStaff(type);
+      assert.equal(filter, null);
+    }
+    await notifyStaff(type, field ? OTHER_USER_ID : undefined);
+    assert.deepEqual(filter, { role, isActive: true, ...(field ? { [field]: OTHER_USER_ID } : {}) });
+    assert.equal(saved.at(-1).recipientUserId, USER_ID);
+    assert.equal(saved.at(-1).link, link);
+    assert.equal(sent.at(-1).room, "user:" + USER_ID);
+    assert.equal(sent.at(-1).event, "notification:new");
+    assert.equal(sent.at(-1).payload._id, NOTIFICATION_ID);
+    assert.equal(sent.at(-1).payload.type, type);
+  }
+  assert.equal(saved.length, 7);
+  assert.equal(sent.length, saved.length);
+});

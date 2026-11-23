@@ -8,7 +8,7 @@ const { verifyToken, requireRole } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
-const { notifyParents } = require("../services/notifications");
+const { notifyParents, notifyStaff } = require("../services/notifications");
 const workflow = require("../services/workflow");
 const { ROLES, INSURANCE_STATUS } = require("../constants");
 const {
@@ -279,6 +279,9 @@ router.post(
       },
     });
 
+    if (String(previousPediatricianId) !== String(pediatrician._id)) {
+      await notifyStaff("staff.patient_assigned", pediatrician._id);
+    }
     await notifyParents(baby, { type: "baby.pediatrician_assigned" });
 
     res.status(200).json({

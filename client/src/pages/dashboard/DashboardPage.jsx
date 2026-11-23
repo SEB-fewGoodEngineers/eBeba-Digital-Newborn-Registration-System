@@ -1,6 +1,6 @@
 ﻿
 import { useEffect, useState } from "react";
-import { Link as RouterLink } from "react-router";
+import { Link as RouterLink, useSearchParams } from "react-router";
 import {
   Alert,
   Box,
@@ -12,6 +12,8 @@ import {
   Typography,
 } from "@mui/material";
 
+import { STATUS_LABELS } from "../../constants/labels";
+import ChildCare from "@mui/icons-material/ChildCareOutlined";
 import DemoBadge from "../../components/DemoBadge/DemoBadge";
 import StatusBadge from "../../components/StatusBadge/StatusBadge";
 import { getDashboard } from "../../services/dashboardService";
@@ -22,6 +24,8 @@ import { formatDateTime } from "../../utils/dates";
 import CardDownloads from "../../components/CardDownloads/CardDownloads";
 
 export default function DashboardPage() {
+  const [params] = useSearchParams();
+  const showDocuments = params.get("view") === "documents";
   const [babies, setBabies] = useState([]);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
@@ -110,10 +114,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <Box sx={{ maxWidth: 900, mx: "auto", p: 3 }}>
+    <Box className="panel-page">
       <Stack spacing={3}>
         <Typography variant="h4" component="h1">
-          Parent Dashboard
+          {showDocuments ? "Documents and care" : "My baby"}
         </Typography>
 
         {babies.length === 0 ? (
@@ -136,18 +140,27 @@ export default function DashboardPage() {
             <Card key={baby._id} variant="outlined">
               <CardContent>
                 <Stack spacing={2}>
-                  <Typography variant="h5" component="h2">
-                    {baby.firstName || "Baby"} {baby.lastName || ""}
-                  </Typography>
-
-                  <Typography>
-                    Birth record: {baby.birthRecordNumber}
-                  </Typography>
-
-                  <Typography>
-                    Born: {formatDateTime(baby.birthDateTime)}
-                  </Typography>
-
+                  <div className="family-summary">
+                    <div className="baby-id"><ChildCare aria-hidden="true" /><div>
+                      <h2>{[baby.firstName, baby.lastName].filter(Boolean).join(" ") || "Baby"}</h2>
+                      <p>Date of birth: {formatDateTime(baby.birthDateTime)}</p>
+                      <p>Birth record: {baby.birthRecordNumber}</p>
+                    </div></div>
+                    {!showDocuments && <section className="tracker"><h3>Registration tracker</h3>
+                      <ol>{[
+                        ["Hospital record", "complete", true],
+                        ["Ministry review", STATUS_LABELS[baby.registrationStatus] || "Not submitted", baby.registrationStatus === "approved"],
+                        ["Insurance", STATUS_LABELS[baby.insuranceStatus] || "Waiting", baby.insuranceStatus === "card_issued"],
+                      ].map(([label, value, done], i) => <li key={label} data-stage={done ? "done" : i === 1 ? "current" : "waiting"}>
+                        <span className="stage-dot" aria-hidden="true">{done ? "✓" : ""}</span>
+                        <strong>{label}<br />{value}</strong>
+                      </li>)}</ol>
+                      <Button variant="contained" component={RouterLink} to={`/registration/apply?babyId=${baby._id}`}>View application</Button>
+                    </section>}
+                  </div>
+                  <div hidden={!showDocuments && baby.registrationStatus !== "returned"} className="application-detail">
+                  <div>Social welfare: <StatusBadge status={baby.cswStatus || "Waiting"} /></div>
+                  <details className="birth-facts"><summary>Birth details</summary>
                   <Typography>
                     Gender: {baby.gender}
                   </Typography>
@@ -180,29 +193,7 @@ export default function DashboardPage() {
                     </Stack>
                   )}
 
-                  <Typography variant="h6" component="h3">
-                    Registration status
-                  </Typography>
-
-                  <Stack spacing={1}>
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      sx={{ alignItems: "center" }}
-                    >
-                      <Typography>MoI:</Typography>
-
-                      {baby.registrationStatus ? (
-                        <StatusBadge
-                          status={baby.registrationStatus}
-                        />
-                      ) : (
-                        <Typography>
-                          Not submitted
-                        </Typography>
-                      )}
-                    </Stack>
-
+                  </details>
                     {/* Returned application correction */}
                     {baby.registrationStatus === "returned" && (
                       <Alert severity="warning">
@@ -230,27 +221,6 @@ export default function DashboardPage() {
                         </Stack>
                       </Alert>
                     )}
-
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      sx={{ alignItems: "center" }}
-                    >
-                      <Typography>CSW:</Typography>
-                      <StatusBadge status={baby.cswStatus} />
-                    </Stack>
-
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      sx={{ alignItems: "center" }}
-                    >
-                      <Typography>FZO:</Typography>
-                      <StatusBadge
-                        status={baby.insuranceStatus}
-                      />
-                    </Stack>
-                  </Stack>
 
                   <Typography>
                     Pediatrician:{" "}
@@ -336,6 +306,7 @@ export default function DashboardPage() {
                       BabyCare / BabySteps
                     </Button>
                   </Stack>
+                  </div>
                 </Stack>
               </CardContent>
             </Card>

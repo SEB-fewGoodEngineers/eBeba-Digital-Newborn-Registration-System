@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useLocation, useParams } from "react-router";
 import {
   Alert,
   Box,
@@ -82,6 +82,7 @@ function CompareRow({ label, proposed, record }) {
 
 export default function ReviewPage() {
   const { registrationId } = useParams();
+  const { state } = useLocation();
   const { user } = useUser();
 
   // loading | error | ready
@@ -406,6 +407,7 @@ export default function ReviewPage() {
             <Button
               variant="outlined"
               color="warning"
+              autoFocus={state?.intent === "return"}
               onClick={openReturn}
               type="button"
             >
@@ -429,6 +431,7 @@ export default function ReviewPage() {
                   handleOpenKeyDialog();
                 }
               }}
+              autoFocus={state?.intent === "approve"}
               disabled={signingKeyReady === null}
               type="button"
             >

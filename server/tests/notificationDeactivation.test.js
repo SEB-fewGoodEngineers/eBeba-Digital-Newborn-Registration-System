@@ -16,7 +16,8 @@ const ADMIN_ID = "507f1f77bcf86cd799439011";
 const USER_ID = "507f1f77bcf86cd799439012";
 const TEST_SECRET = "synthetic-n1-secret-for-testing-only";
 
-test("admin deactivation disconnects the user and creates an audit record", async () => {
+test("admin deactivation disconnects the user and creates an audit record", async (t) => {
+  t.mock.method(User, "find", () => ({ select: () => ({ lean: async () => [] }) }));
   const originalFindById = User.findById;
   const originalAuditLog = audit.log;
   const originalSecret = process.env.JWT_SECRET;
