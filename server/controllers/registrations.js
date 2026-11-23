@@ -27,6 +27,8 @@ const {
 
 const { ROLES, REGISTRATION_STATUS } = require("../constants");
 
+const { notifyStaff } = require("../services/notifications");
+
 const router = express.Router();
 
 // A helper: is this user allowed to see / act on this baby?
@@ -83,6 +85,8 @@ router.post(
       targetCollection: "registrations",
       targetDocumentId: registration._id,
     });
+
+    await notifyStaff("staff.review_requested");
 
     // 5. Response.
     res.status(201).json({

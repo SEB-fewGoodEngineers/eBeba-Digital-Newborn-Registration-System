@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import Child from "@mui/icons-material/ChildCareOutlined";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Box,
@@ -9,7 +10,7 @@ import {
   Divider,
   List,
   ListItemButton,
-  ListItemText,
+
   MenuItem,
   Stack,
   TextField,
@@ -60,42 +61,7 @@ export default function InsuranceRecordsPage() {
   const [pediatricianError, setPediatricianError] = useState("");
   const [pediatricianId, setPediatricianId] = useState("");
 
-  useEffect(() => {
-    let ignore = false; // stops an old request from overwriting new data
-    getInsuranceRecords()
-      .then((data) => {
-        if (!ignore) {
-          setRecords(data);
-          setStatus("ready");
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          setError(err.message);
-          setStatus("error");
-        }
-      });
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-    // Load the list of active pediatricians once
-  useEffect(() => {
-    let ignore = false;
-    getPediatricians()
-      .then((data) => {
-        if (!ignore) setPediatricians(data);
-      })
-      .catch((err) => {
-        if (!ignore) setPediatricianError(err.message);
-      });
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  const handleSelect = async (recordId) => {
+  const handleSelect = useCallback(async (recordId) => {
     const requestNumber = ++latestRequest.current;
     setSelectedId(recordId);
     setDetail(null);
@@ -112,7 +78,43 @@ export default function InsuranceRecordsPage() {
     } finally {
       if (requestNumber === latestRequest.current) setDetailLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    let ignore = false; // stops an old request from overwriting new data
+    getInsuranceRecords()
+      .then((data) => {
+        if (!ignore) {
+          setRecords(data);
+          if (data.length) handleSelect(data[0]._id);
+          setStatus("ready");
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          setError(err.message);
+          setStatus("error");
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [handleSelect]);
+
+    // Load the list of active pediatricians once
+  useEffect(() => {
+    let ignore = false;
+    getPediatricians()
+      .then((data) => {
+        if (!ignore) setPediatricians(data);
+      })
+      .catch((err) => {
+        if (!ignore) setPediatricianError(err.message);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // Runs "Start" or "Issue", then loads the record again
   const handleAction = async (actionFn) => {
@@ -154,7 +156,7 @@ export default function InsuranceRecordsPage() {
 
   if (records.length === 0) {
     return (
-      <Box sx={{ p: 4, textAlign: "center" }}>
+      <Box className="panel-page"><h1>Health insurance – Insurance records</h1>
         <Typography>No insurance records found for your branch.</Typography>
       </Box>
     );
@@ -166,13 +168,15 @@ export default function InsuranceRecordsPage() {
   );
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1000, mx: "auto" }}>
+    <Box className="panel-page">
       <Typography variant="h4" component="h1" gutterBottom>
-        FZO Insurance Records
+        Health insurance – Insurance records
       </Typography>
-      <Stack direction={{ xs: "column", md: "row" }} spacing={4}>
+      <p className="panel-description">Review and process insurance records for newborn registrations.</p>
+      <Stack className="agency-pair" direction={{ xs: "column", md: "row" }} spacing={2}>
         <Box sx={{ flex: 1 }}>
           <Card variant="outlined">
+            <h2 className="list-title">Insurance records ({records.length})</h2>
             <List disablePadding>
               {records.map((record, index) => {
                 const recordBaby = record.babyId || {};
@@ -180,26 +184,12 @@ export default function InsuranceRecordsPage() {
                   <Box key={record._id}>
                     {index > 0 && <Divider />}
                     <ListItemButton
+                      disabled={isSaving}
                       selected={selectedId === record._id}
                       onClick={() => handleSelect(record._id)}
                     >
-                      <ListItemText
-                        primary={babyName(recordBaby)}
-                        slotProps={{ secondary: { component: "div" } }}
-                        secondary={
-                          <>
-                            {recordBaby.jmbg && (
-                              <Box sx={{ display: "flex", alignItems: "center" }}>
-                                JMBG: {recordBaby.jmbg} <DemoBadge />
-                              </Box>
-                            )}
-                            <Box>Created: {formatDate(record.createdAt)}</Box>
-                            <Box sx={{ mt: 1 }}>
-                              <StatusBadge status={record.status} />
-                            </Box>
-                          </>
-                        }
-                      />
+                      <Child /><span className="row-name"><strong>{babyName(recordBaby)}</strong><small>{recordBaby.birthRecordNumber || formatDate(record.createdAt)}</small></span>
+                      <StatusBadge status={record.status} />
                     </ListItemButton>
                   </Box>
                 );
@@ -233,9 +223,9 @@ export default function InsuranceRecordsPage() {
           {detail && (
             <Card variant="outlined">
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Record Details
-                </Typography>
+                <div className="detail-heading"><Child /><div><h2>{babyName(baby || {})}</h2><small>{baby?.birthRecordNumber}</small></div></div>
+                <dl className="record-fields"><dt>Date of birth</dt><dd>{formatDate(baby?.birthDateTime)}</dd><dt>Parent</dt><dd>{baby?.mother?.firstName} {baby?.mother?.lastName}</dd><dt>Insurance status</dt><dd><StatusBadge status={detail.status}/></dd></dl>
+                <details className="review-more" key={detail._id}><summary>Review insurance record</summary>
                 <StatusBadge status={detail.status} />
 
                 <Box sx={{ mt: 1 }}>
@@ -402,6 +392,7 @@ export default function InsuranceRecordsPage() {
                     </>
                   )}
                 </Box>
+                </details>
               </CardContent>
             </Card>
           )}

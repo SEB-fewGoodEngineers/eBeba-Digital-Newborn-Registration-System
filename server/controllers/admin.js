@@ -13,6 +13,7 @@ const validate = require("../middleware/validate");
 const asyncHandler = require("../middleware/asyncHandler");
 const audit = require("../services/audit");
 const {
+  notifyStaff,
   disconnectNotificationUser,
 } = require("../services/notifications");
 // N3: called as reminders.runReminders so tests can replace it.
@@ -113,6 +114,7 @@ router.post(
       },
     });
 
+    await notifyStaff("staff.account_created");
     res.status(201).json(user);
   }),
 );
@@ -165,6 +167,7 @@ router.patch(
       },
     });
 
+    await notifyStaff("staff.access_changed");
     res.status(200).json(user);
   }),
 );

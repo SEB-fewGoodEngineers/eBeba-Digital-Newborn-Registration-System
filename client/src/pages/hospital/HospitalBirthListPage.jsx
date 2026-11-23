@@ -1,24 +1,19 @@
 
 import { useEffect, useState } from "react";
+import Add from "@mui/icons-material/Add";
 import { Link } from "react-router";
 import {
   Alert,
   Box,
   Button,
   CircularProgress,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Typography,
 } from "@mui/material";
 
 import { getBabies } from "../../services/babyService";
 import { formatDateTime } from "../../utils/dates";
+import RecordPair from "../../components/Workspace/RecordPair";
 import StatusBadge from "../../components/StatusBadge/StatusBadge";
 import DemoBadge from "../../components/DemoBadge/DemoBadge";
 
@@ -60,29 +55,30 @@ export default function HospitalBirthListPage() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box className="panel-page">
+      <header className="panel-heading"><div>
       <Typography variant="h5" component="h1" gutterBottom>
-        Hospital birth records
-      </Typography>
-
+        Birth records
+      </Typography><p>Record new births and manage recent birth records.</p></div>
       <Button
         component={Link}
+        startIcon={<Add />}
         to="/hospital/babies/new"
         variant="contained"
         sx={{ mb: 3 }}
       >
         Record a birth
-      </Button>
+      </Button></header>
 
       {/* STORY 1.5 - SEARCH THE HOSPITAL LIST */}
-      <TextField
+      <details className="search-tools"><summary>Search birth records</summary><TextField
         label="Search by mother's last name or record number"
         value={search}
         onChange={handleSearch}
         fullWidth
         size="small"
         sx={{ mb: 3 }}
-      />
+      /></details>
 
       {status === "loading" && (
         <CircularProgress aria-label="Loading" />
@@ -101,78 +97,27 @@ export default function HospitalBirthListPage() {
       )}
 
       {status === "ready" && babies.length > 0 && (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Record number</TableCell>
-                <TableCell>Birth date</TableCell>
-                <TableCell>Gender</TableCell>
-                <TableCell>Mother</TableCell>
-                <TableCell>Municipality</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>JMBG</TableCell>
-                <TableCell>Action</TableCell>
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {babies.map((baby) => (
-                <TableRow key={baby._id}>
-                  <TableCell>{baby.birthRecordNumber}</TableCell>
-
-                  <TableCell>
-                    {formatDateTime(baby.birthDateTime)}
-                  </TableCell>
-
-                  <TableCell>
-                    {baby.gender === "M" ? "Male" : "Female"}
-                  </TableCell>
-
-                  <TableCell>
-                    {baby.mother.firstName}{" "}
-                    {baby.mother.lastName}
-                  </TableCell>
-
-                  <TableCell>{baby.municipalityOfBirth}</TableCell>
-
-                  <TableCell>
-                    <StatusBadge
-                      status={baby.registrationStatus || "Not applied"}
-                    />
-                  </TableCell>
-
-                  <TableCell>
-                    {baby.registrationStatus === "approved" && baby.jmbg ? (
-                      <>
-                        {baby.jmbg}
-                        <DemoBadge />
-                      </>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-
-                  {/* STORY 1.4 - CORRECT A BIRTH RECORD */}
-                  <TableCell>
-                    {!baby.registrationStatus ? (
-                      <Button
-                        component={Link}
-                        to={`/hospital/babies/${baby._id}/edit`}
-                        variant="outlined"
-                        size="small"
-                      >
-                        Edit
-                      </Button>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <RecordPair records={babies} heading="Birth records" detailTitle="Record details"
+          name={(b) => [b.firstName, b.lastName].filter(Boolean).join(" ") || b.birthRecordNumber}
+          caption={(b) => formatDateTime(b.birthDateTime)}
+          summary={(b) => <small>{b.birthRecordNumber}</small>}
+          details={(b) => <>
+            <dl className="record-fields">
+              <dt>Baby</dt><dd>{[b.firstName,b.lastName].filter(Boolean).join(" ") || "Newborn"}</dd>
+              <dt>Birth record</dt><dd>{b.birthRecordNumber}</dd>
+              <dt>Date of birth</dt><dd>{formatDateTime(b.birthDateTime)}</dd>
+            </dl><strong className="hospital-complete">✓ Hospital record complete</strong>
+            <details className="extra-info"><summary>More details</summary><dl className="record-fields">
+              <dt>Gender</dt><dd>{b.gender}</dd>
+              <dt>Mother</dt><dd>{b.mother?.firstName} {b.mother?.lastName}</dd>
+              <dt>Municipality</dt><dd>{b.municipalityOfBirth}</dd>
+              <dt>Registration</dt><dd><StatusBadge status={b.registrationStatus || "Not applied"} /></dd>
+              {b.registrationStatus === "approved" && b.jmbg && <><dt>JMBG</dt><dd>{b.jmbg} <DemoBadge /></dd></>}
+            </dl>
+            {!b.registrationStatus && <Button component={Link} to={`/hospital/babies/${b._id}/edit`} variant="outlined">Edit record</Button>}
+            </details>
+          </>}
+        />
       )}
     </Box>
   );

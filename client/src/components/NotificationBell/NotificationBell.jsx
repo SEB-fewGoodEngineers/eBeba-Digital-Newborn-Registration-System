@@ -15,10 +15,8 @@ import {
 } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useUser } from "../../contexts/UserContext";
-import { subscribeToNotifications } from "../../services/socket";
 import {
-  addNotification,
-  getNotifications,
+  watchNotifications,
   isInternalLink,
   markNotificationRead,
   replaceNotification,
@@ -46,36 +44,12 @@ export default function NotificationBell() {
 
   // Load my notifications.
   useEffect(() => {
-    let ignore = false; // stops an old request from overwriting new data
-
-    getNotifications()
-      .then((data) => {
-        if (!ignore) {
-          setNotifications(data);
-          setStatus("ready");
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          setError(err.message);
-          setStatus("error");
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [reloadCount]);
-
-  // New notifications arrive live on the shared socket.
-  // Depends on "user": UserProvider opens a new socket when the user changes.
-  useEffect(() => {
-    if (!user) return undefined;
-
-    return subscribeToNotifications((notification) => {
-      setNotifications((list) => addNotification(list, notification));
+    if (!user) return;
+    return watchNotifications(setNotifications, () => setStatus("ready"), (err) => {
+      setError(err.message);
+      setStatus("error");
     });
-  }, [user]);
+  }, [user, reloadCount]);
 
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
